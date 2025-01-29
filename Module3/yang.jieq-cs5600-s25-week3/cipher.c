@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Define the Polybius table (Hardcoded)
-    PolybiusTable table = {{
+    PolybiusTable_t table = {{
         {'A', 'B', 'C', 'D', 'E'},
         {'F', 'G', 'H', 'I', 'J'},
         {'K', 'L', 'M', 'N', 'O'},
