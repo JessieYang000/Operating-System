@@ -2,22 +2,31 @@
 CC = gcc
 CFLAGS = -Wall -Werror -g
 
-# Source and Object Files
-SRC = genrand.c lcg.c
-OBJ = genrand.o lcg.o
-TARGET = genrand
+# Source and Object Files for genrand
+GENRAND_SRC = genrand.c lcg.c
+GENRAND_OBJ = genrand.o lcg.o
+GENRAND_TARGET = genrand
 
-# Default Rule: Build the Executable
-all: $(TARGET)
+# Source and Object Files for cipher
+CIPHER_SRC = cipher.c polybius.c
+CIPHER_OBJ = cipher.o polybius.o
+CIPHER_TARGET = cipher
 
-# Compile the executable by linking object files
-$(TARGET): $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(TARGET)
+# Default Rule: Build both executables
+all: $(GENRAND_TARGET) $(CIPHER_TARGET)
+
+# Rule to compile genrand
+$(GENRAND_TARGET): $(GENRAND_OBJ)
+	$(CC) $(CFLAGS) $(GENRAND_OBJ) -o $(GENRAND_TARGET)
+
+# Rule to compile cipher
+$(CIPHER_TARGET): $(CIPHER_OBJ)
+	$(CC) $(CFLAGS) $(CIPHER_OBJ) -o $(CIPHER_TARGET)
 
 # Compile source files into object files
-%.o: %.c lcg.h
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean compiled files
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(GENRAND_OBJ) $(CIPHER_OBJ) $(GENRAND_TARGET) $(CIPHER_TARGET)
