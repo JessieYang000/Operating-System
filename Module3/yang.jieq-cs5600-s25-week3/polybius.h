@@ -7,10 +7,10 @@
 // Define a structure for the Polybius table
 typedef struct {
     char grid[ROWS][COLS];  // The 6×5 table
-} PolybiusTable;
+} PolybiusTable_t;
 
 // Function prototypes
-void pbEncode(const char *plaintext, PolybiusTable table);
-void pbDecode(const char *ciphertext, PolybiusTable table);
+void pbEncode(const char *plaintext, PolybiusTable_t table);
+void pbDecode(const char *ciphertext, PolybiusTable_t table);
 
 #endif  // POLYBIUS_H
