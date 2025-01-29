@@ -4,7 +4,7 @@
 #include "polybius.h"
 
 // Function to encode plaintext into Polybius coordinates
-void pbEncode(const char *plaintext, PolybiusTable table) {
+void pbEncode(const char *plaintext, PolybiusTable_t table) {
     printf("Encoded: ");
     for (int i = 0; plaintext[i] != '\0'; i++) {
         char c = toupper(plaintext[i]);  // Convert to uppercase
@@ -37,7 +37,7 @@ void pbEncode(const char *plaintext, PolybiusTable table) {
 }
 
 // Function to decode a Polybius ciphertext back to text
-void pbDecode(const char *ciphertext, PolybiusTable table) {
+void pbDecode(const char *ciphertext, PolybiusTable_t table) {
     printf("Decoded: ");
     for (int i = 0; i < strlen(ciphertext); i++) {
         if (!isdigit(ciphertext[i])) {  
