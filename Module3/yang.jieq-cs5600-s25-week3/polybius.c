@@ -35,3 +35,26 @@ void pbEncode(const char *plaintext, PolybiusTable table) {
     }
     printf("\n");
 }
+
+// Function to decode a Polybius ciphertext back to text
+void pbDecode(const char *ciphertext, PolybiusTable table) {
+    printf("Decoded: ");
+    for (int i = 0; i < strlen(ciphertext); i++) {
+        if (!isdigit(ciphertext[i])) {  
+            printf("%c", ciphertext[i]); // Print special characters unchanged
+            continue;
+        }
+
+        // Convert two-digit number into (row, col)
+        int row = ciphertext[i] - '0' - 1;
+        int col = ciphertext[i + 1] - '0' - 1;
+
+        // Ensure valid coordinates before printing
+        if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+            printf("%c", table.grid[row][col]);
+        }
+
+        i++;  // Skip next index
+    }
+    printf("\n");
+}
