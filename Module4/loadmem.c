@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_LINE_LENGTH 1024  // Safe max length for fgets; for long lines, getline() will work by dynamically allocate the memory
+
 // Define a struct to store an array of integers dynamically
 typedef struct
 {
@@ -88,9 +90,9 @@ A function to convert a line of numbers into an integer array
 
 int convert_line_to_int_array(char *line, int **values) {
     int count = 0;
-    int *token;
+    char *token;
 
-    int *temp = strdup(line); // Avoid modifying the original pointer
+    char *temp = strdup(line); // Avoid modifying the original pointer
     if(!temp) return 0;
 
     //Count the numbers in a line
@@ -113,8 +115,10 @@ int convert_line_to_int_array(char *line, int **values) {
     //Convert string tokens to integers
     token = strtok(line, " ");
     for(int i = 0; i < count; i++) {
-        (*values)[i] = atoi(token);
-        token = strtok(NULL, " ");
+        if(token) {
+            (*values)[i] = atoi(token);
+            token = strtok(NULL, " ");
+        }
     }
 
     return count;
@@ -122,36 +126,72 @@ int convert_line_to_int_array(char *line, int **values) {
 
 int main()
 {
-    int size = 10;
-
-    // Define a dyn_block object with predefined size
-    dyn_block *block = alloc_dyn_block(size); 
-
-    // Check whether the block was defined successfully or not
-    if (!block)
-    {
-        puts("Failed to allocate memory of a block.");
-        return EXIT_FAILURE; // Equivalent to 1
+    // Open the file
+    FILE *file = fopen("blocks.data", "r");
+    if(!file) {
+        perror("Error opening file.");
+        return EXIT_FAILURE;
     }
 
-    // Define a sample data array holding integers
-    int sample_data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    char line[MAX_LINE_LENGTH]; // Buffer for reading each line
+    dyn_block **blocks = NULL; // Array of dyn_block pointers to store all dyn_block objects 
+    int block_count = 0;
 
-    // Store the values of the data array into the dynamic block
-    store_mem_blk(block, sample_data, size);
+    // Read the file line by line
+    while(fgets(line, sizeof(line), file)) {
+        int *values = NULL;
+        int num_values = convert_line_to_int_array(line, &values);
 
-    // Print out the values in the block to see whether storing them successfuly
-    puts("Stored data into dyn_block.");
-    for (int i = 0; i < block->size; i++)
-    {
-        printf("%d ", block->data[i]);
+        if(num_values > 0) {
+            // If found a valid line, then allocate a new dyn_block
+            dyn_block *block = alloc_dyn_block(num_values);
+
+            // If allocation failed, free the values pointer and read the next line
+            if(!block) {
+                if(values) free(values);
+                continue;
+            }
+
+            // Store the values into the block
+            store_mem_blk(block, values, num_values);
+
+            // Add the current block to the list
+            dyn_block **temp = realloc(blocks, (block_count + 1) * sizeof(dyn_block *));
+
+            // If blocks allocation failed, free all pointers and exit
+            if(!temp) {
+                fprintf(stderr, "Memory allocation failed for blocks list.\n");
+                free(block -> data);
+                free(block);
+                if(values) free(values);
+
+                return EXIT_FAILURE;
+            }
+
+            blocks = temp;
+            blocks[block_count++] = block;
+        }
+
+        if(values) free(values); // Free temporaty integer array
     }
-    
-    puts("\n");
 
-    // Free the memory allocated on the heap
-    free(block->data);
-    free(block);
+    fclose(file);
 
+    // Print stored data to verify correctness
+    for(int i = 0; i < block_count; i++) {
+        printf("Block %d:", i + 1);
+        for(int j = 0; j < blocks[i]->size; j++) {
+            printf("%d ", blocks[i]->data[j]);
+        }
+        puts("\n");
+    }
+
+    // Free all memory allocation
+    for(int i = 0; i < block_count; i++) {
+        free(blocks[i]->data);
+        free(blocks[i]);
+    }
+
+    if(blocks) free(blocks);
     return EXIT_SUCCESS;
 }
