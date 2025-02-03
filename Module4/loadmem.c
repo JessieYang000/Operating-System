@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // Define a struct to store an array of integers dynamically
 typedef struct
@@ -79,6 +80,44 @@ void store_mem_blk(dyn_block *block, int *values, int size)
     {
         block->data[i] = values[i];
     }
+}
+
+/*
+A function to convert a line of numbers into an integer array
+*/
+
+int convert_line_to_int_array(char *line, int **values) {
+    int count = 0;
+    int *token;
+
+    int *temp = strdup(line); // Avoid modifying the original pointer
+    if(!temp) return 0;
+
+    //Count the numbers in a line
+    token = strtok(temp, " ");
+    while(token) {
+        count++;
+        token = strtok(NULL, " ");
+    }
+
+    free(temp); // Free temporary memory if it is unnecessary anymore
+
+    if(count == 0) return 0;
+
+    *values = (int *)malloc(count * sizeof(int));
+    if(!*values) {
+        fprintf(stderr, "Memory allocation failed for values array\n");
+        return 0;
+    }
+
+    //Convert string tokens to integers
+    token = strtok(line, " ");
+    for(int i = 0; i < count; i++) {
+        (*values)[i] = atoi(token);
+        token = strtok(NULL, " ");
+    }
+
+    return count;
 }
 
 int main()
