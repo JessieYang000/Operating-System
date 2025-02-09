@@ -1,7 +1,7 @@
 
-#include <queue.h>
+#include "queue.h"
 #include <stdlib.h>
-
+#include <stdio.h>
 // Function to push an element to the end of a queue
 void push_queue(queue_t *queue, void *element)
 {
@@ -135,8 +135,10 @@ process_t *remove_process(queue_t *queue)
 }
 
 // Function to get the size of a queue
-int get_queue_size(queue_t* queue) {
-    if(!queue) {
+int get_queue_size(queue_t *queue)
+{
+    if (!queue)
+    {
         perror("Invalid queue.");
         exit(EXIT_FAILURE);
     }
