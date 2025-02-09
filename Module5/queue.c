@@ -133,3 +133,13 @@ process_t *remove_process(queue_t *queue)
 
     return data;
 }
+
+// Function to get the size of a queue
+int get_queue_size(queue_t* queue) {
+    if(!queue) {
+        perror("Invalid queue.");
+        exit(EXIT_FAILURE);
+    }
+
+    return queue->size;
+}
