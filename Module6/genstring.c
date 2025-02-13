@@ -24,40 +24,10 @@ char *genString(int length)
     return randomStr;
 }
 
-int main(int argc, char *argv[])
+/* A function to create a file and write strings into it*/
+int saveStringsInFile(char *filename, int num, int length)
 {
-    if (argc != 4)
-    {
-        fprintf(stderr, "Invalid arguments. Usage: %s <number> <string length> <filename>\n", argv[0]);
-        return 1;
-    }
-
-    srand(time(NULL));  // Seed the random number generator with the current time to ensure different random values on each run
-
-    // Retrieve the number of strings and the length of each string
-    char *endptr;
-    long temp1 = strtol(argv[1], &endptr, 10);
-
-    if (*endptr != '\0' || temp1 < 10000)
-    {
-        fprintf(stderr, "Error: <number> must be a positive integer at least 10,000.\n");
-        return 1;
-    }
-
-    long temp2 = strtol(argv[2], &endptr, 10);
-    if (*endptr != '\0' || temp2 <= 0)
-    {
-        fprintf(stderr, "Error: <length> must be a positive integer. \n");
-        return 1;
-    }
-
-    int num = (int)temp1;
-    int length = (int)temp2;
-
-    // Retrieve the filename
-    const char *filename = argv[3];
-
-    // Set the append mode
+     // Set the append mode
     const char *mode = "a"; // Use append mode instead of overwrite
 
     // Create a file with given name and append mode
@@ -93,5 +63,47 @@ int main(int argc, char *argv[])
 
     fclose(file);
     printf("Random strings successfully written to %s.\n", filename);
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc != 4)
+    {
+        fprintf(stderr, "Invalid arguments. Usage: %s <number> <string length> <filename>\n", argv[0]);
+        return 1;
+    }
+
+    srand(time(NULL));  // Seed the random number generator with the current time to ensure different random values on each run
+
+    // Retrieve the number of strings and the length of each string
+    char *endptr;
+    long temp1 = strtol(argv[1], &endptr, 10);
+
+    if (*endptr != '\0' || temp1 < 10000)
+    {
+        fprintf(stderr, "Error: <number> must be a positive integer at least 10,000.\n");
+        return 1;
+    }
+
+    long temp2 = strtol(argv[2], &endptr, 10);
+    if (*endptr != '\0' || temp2 <= 0)
+    {
+        fprintf(stderr, "Error: <length> must be a positive integer. \n");
+        return 1;
+    }
+
+    int num = (int)temp1;
+    int length = (int)temp2;
+
+    // Retrieve the filename
+    char *filename = argv[3];
+
+    // Create a file and save strings in it
+    if (saveStringsInFile(filename, num, length) != 0)
+        return 1;
+    
+   
     return 0;
 }
