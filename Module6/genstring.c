@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include "queue.h"
 
 /* A function to generate random strings*/
 char *genString(int length)
@@ -27,7 +28,7 @@ char *genString(int length)
 /* A function to create a file and write strings into it*/
 int saveStringsInFile(char *filename, int num, int length)
 {
-     // Set the append mode
+    // Set the append mode
     const char *mode = "a"; // Use append mode instead of overwrite
 
     // Create a file with given name and append mode
@@ -51,7 +52,7 @@ int saveStringsInFile(char *filename, int num, int length)
         }
 
         // Write the generated string into the file
-        if (fprintf(file, "%s\n", randomString) < 0) 
+        if (fprintf(file, "%s\n", randomString) < 0)
         {
             perror("Failed to write to file");
             free(randomString);
@@ -67,6 +68,58 @@ int saveStringsInFile(char *filename, int num, int length)
     return 0;
 }
 
+int read_file_to_queue(const char *filename, queue_t *queue, int length)
+{
+    FILE *file = fopen(filename, "r"); // Open the file for reading
+    if (file == NULL)
+    {
+        perror("Failed to open file");
+        return 1;
+    }
+
+    char *buffer = malloc(length + 2); // Buffer to hold each line
+    if (!buffer)
+    {
+        perror("Memory allocation failed.");
+        fclose(file);
+        return 1;
+    }
+
+    printf("Saving strings from file %s into queue\n", filename);
+
+    while (fgets(buffer, sizeof(buffer), file))
+    {
+        // Remove trailing newline character, if present
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] == '\n')
+        {
+            buffer[len - 1] = '\0';
+            len--;
+        }
+
+        if (len == 0)
+            continue;
+
+        // Allocate memory for the string and copy the line
+        char *line = malloc(len + 1);
+        if (line == NULL)
+        {
+            perror("Memory allocation failed");
+            fclose(file);
+            return 1;
+        }
+        strcpy(line, buffer);
+
+        // Push the dynamically allocated string to the queue
+        push_queue(queue, line);
+    }
+
+    printf("%d strings saved in queue\n", queue->size);
+
+    fclose(file); // Close the file
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 4)
@@ -75,7 +128,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    srand(time(NULL));  // Seed the random number generator with the current time to ensure different random values on each run
+    srand(time(NULL)); // Seed the random number generator with the current time to ensure different random values on each run
 
     // Retrieve the number of strings and the length of each string
     char *endptr;
@@ -103,7 +156,18 @@ int main(int argc, char *argv[])
     // Create a file and save strings in it
     if (saveStringsInFile(filename, num, length) != 0)
         return 1;
-    
-   
+
+    queue_t *queue = malloc(sizeof(queue_t));
+    if (!queue)
+    {
+        perror("Failed to allocate memory for queue.");
+        return 1;
+    }
+
+    init_queue(queue);
+
+    if (read_file_to_queue(filename, queue, length) != 0)
+        return 1;
+
     return 0;
 }
