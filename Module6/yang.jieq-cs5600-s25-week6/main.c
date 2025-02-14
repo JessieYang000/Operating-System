@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     
 
     // Task 2: Load strings into queue
-    save_in_queue(filename, &queue);
+    save_in_queue(filename, &queue, length);
 
     // // Task 3: Process queue with cipher
     // process_queue_with_cipher(&queue);

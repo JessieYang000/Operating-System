@@ -24,5 +24,6 @@ void init_queue(queue_t *queue);
 void push_queue(queue_t *queue, void *element);
 void *pop_queue(queue_t *queue);
 int get_queue_size(queue_t *queue);
+int save_in_queue(char *filename, queue_t *queue, int length);
 
 #endif

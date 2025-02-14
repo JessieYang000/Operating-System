@@ -2,6 +2,7 @@
 #include "queue.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 void init_queue(queue_t *queue)
 {
@@ -93,4 +94,57 @@ int get_queue_size(queue_t *queue)
     }
 
     return queue->size;
+}
+
+/* A function to save elements from a file to queue*/
+int save_in_queue(char *filename, queue_t *queue, int length)
+{
+    FILE *file = fopen(filename, "r"); // Open the file for reading
+    if (file == NULL)
+    {
+        perror("Failed to open file");
+        return 1;
+    }
+
+    char *buffer = malloc(length + 2); // Buffer to hold each line
+    if (!buffer)
+    {
+        perror("Memory allocation failed.");
+        fclose(file);
+        return 1;
+    }
+
+    printf("Saving strings from file %s into queue\n", filename);
+
+    while (fgets(buffer, sizeof(buffer), file))
+    {
+        // Remove trailing newline character, if present
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] == '\n')
+        {
+            buffer[len - 1] = '\0';
+            len--;
+        }
+
+        if (len == 0)
+            continue;
+
+        // Allocate memory for the string and copy the line
+        char *line = malloc(len + 1);
+        if (line == NULL)
+        {
+            perror("Memory allocation failed");
+            fclose(file);
+            return 1;
+        }
+        strcpy(line, buffer);
+
+        // Push the dynamically allocated string to the queue
+        push_queue(queue, line);
+    }
+
+    printf("%d strings saved in queue\n", queue->size);
+
+    fclose(file); // Close the file
+    return 0;
 }
