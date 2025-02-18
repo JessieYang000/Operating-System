@@ -3,6 +3,7 @@
 #include "queue.h"
 #include "strings.h"
 #include <time.h>
+#include "polybius.h"
 
 #define MAX_LENGTH 1024
 int main(int argc, char *argv[]) {
@@ -45,8 +46,18 @@ int main(int argc, char *argv[]) {
     // Task 2: Load strings into queue
     save_in_queue(filename, &queue, length);
 
-    // // Task 3: Process queue with cipher
-    // process_queue_with_cipher(&queue);
+    // Task 3: Process queue with cipher
+    // Define the Polybius table (Hardcoded)
+    PolybiusTable_t table = {{
+        {'A', 'B', 'C', 'D', 'E'},
+        {'F', 'G', 'H', 'I', 'J'},
+        {'K', 'L', 'M', 'N', 'O'},
+        {'P', 'Q', 'R', 'S', 'T'},
+        {'U', 'V', 'W', 'X', 'Y'},
+        {'Z', ' ', ' ', ' ', ' '}
+    }};
+
+    process_queue_with_cipher(&queue, table);
 
     return 0;
 }

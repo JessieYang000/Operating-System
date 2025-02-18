@@ -7,7 +7,7 @@
 /* A function to generate random strings*/
 char *genString(int length)
 {
-    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     char *randomStr = malloc(length + 1);
     if (randomStr == NULL)

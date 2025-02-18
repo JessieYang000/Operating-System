@@ -106,7 +106,7 @@ int save_in_queue(char *filename, queue_t *queue, int length)
         return 1;
     }
 
-    char *buffer = malloc(length + 2); // Buffer to hold each line
+    char *buffer = malloc(length + 2); // Allocate buffer for each line
     if (!buffer)
     {
         perror("Memory allocation failed.");
@@ -116,9 +116,9 @@ int save_in_queue(char *filename, queue_t *queue, int length)
 
     printf("Saving strings from file %s into queue\n", filename);
 
-    while (fgets(buffer, sizeof(buffer), file))
+    while (fgets(buffer, length + 2, file)) // FIX: Use correct buffer size
     {
-        // Remove trailing newline character, if present
+        // Remove trailing newline character
         size_t len = strlen(buffer);
         if (len > 0 && buffer[len - 1] == '\n')
         {
@@ -126,25 +126,26 @@ int save_in_queue(char *filename, queue_t *queue, int length)
             len--;
         }
 
-        if (len == 0)
+        if (len == 0) // Skip empty lines
             continue;
 
-        // Allocate memory for the string and copy the line
+        // Allocate memory for a new line
         char *line = malloc(len + 1);
         if (line == NULL)
         {
             perror("Memory allocation failed");
+            free(buffer);
             fclose(file);
             return 1;
         }
-        strcpy(line, buffer);
+        strcpy(line, buffer); // Copy buffer contents
 
-        // Push the dynamically allocated string to the queue
-        push_queue(queue, line);
+        push_queue(queue, line); // Push the new string into the queue
     }
 
-    printf("%d strings saved in queue\n", queue->size);
+    printf("%d strings saved in queue\n", get_queue_size(queue));
 
+    free(buffer); // Free the buffer
     fclose(file); // Close the file
     return 0;
 }
