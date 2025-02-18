@@ -177,6 +177,7 @@ void process_queue_with_cipher(queue_t *queue, PolybiusTable_t table) {
                     exit(EXIT_FAILURE);
                 }
                 write(fd, output_data, bytes_read);
+                printf("Successfully generated %s\n", filename);
                 close(fd);
             }
 
