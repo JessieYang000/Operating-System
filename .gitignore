@@ -5,3 +5,5 @@ cipher
 *.pdf
 *.out
 *.exe
+.txt
+./gitignore
