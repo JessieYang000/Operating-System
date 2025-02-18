@@ -28,7 +28,3 @@ $(TARGET): $(OBJ)
 # Clean up object files and executable
 clean:
 	rm -f $(OBJ) $(TARGET)
-
-# # Run the program with arguments
-# run: $(TARGET)
-# 	./$(TARGET) 10000 10 output.txt
