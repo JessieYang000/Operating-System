@@ -2,7 +2,9 @@
 #define QUEUE_H
 #include <stdlib.h>
 
-// Forward declaration of queue_node_t
+/*Forward declaration of queue_node_t: The forward declaration typedef struct queue_node queue_node_t; informs the compiler about the existence of a struct queue_node type without providing its complete definition at that point. This is particularly useful when you have self-referential structures or when two structures reference each other, as it allows the compiler to recognize the type before its full definition is encountered.
+*/
+
 typedef struct queue_node queue_node_t;
 
 // Definition of queue_node_t

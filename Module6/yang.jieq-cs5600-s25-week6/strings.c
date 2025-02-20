@@ -28,10 +28,9 @@ char *genString(int length)
 /* A function to create a file and write strings into it*/
 int saveStringsInFile(char *filename, int num, int length)
 {
-    // Set the append mode
-    const char *mode = "w"; // Use append mode instead of overwrite
+    const char *mode = "w"; // Use write mode instead of appending
 
-    // Create a file with given name and append mode
+    // Create a file with given name
     FILE *file = fopen(filename, mode);
     if (file == NULL)
     {
@@ -43,7 +42,10 @@ int saveStringsInFile(char *filename, int num, int length)
     printf("Writing %d random strings with length %d to %s...\n", num, length, filename);
     for (int i = 0; i < num; i++)
     {
-        char *randomString = genString(length); // Generate a random string
+        /*
+        Generate a random string(Could consider declare randomString out of for-loop and reuse it, so only need to free it once at the end of the method. If in this case, we need to pass it as the second variable with the variable length into genString() method).
+        */
+        char *randomString = genString(length); 
         if (randomString == NULL)
         {
             perror("Memory allocation failed.");
@@ -52,7 +54,7 @@ int saveStringsInFile(char *filename, int num, int length)
         }
 
         // Write the generated string into the file
-        if (fprintf(file, "%s\n", randomString) < 0)
+        if (fprintf(file, "%s\n", randomString) < 0) // fprintf() returns  the number of characters successfully written to the specified output stream
         {
             perror("Failed to write to file");
             free(randomString);
