@@ -3,17 +3,35 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define ARRAY_SIZE 5
+
+int shared_array[ARRAY_SIZE]; // Shared memory (global array)
+
 void *worker(void *data)
 {
     char *name = (char *)data;
 
-    for (int i = 0; i < 120; i++)
-    {
-        usleep(50000); // sleep for 50000 milliseconds
-        printf("Hi from thread name = %s\n", name);
+    if (*name == 'X')
+    { // Writer thread (X)
+        printf("Thread %s started writing\n", name);
+        for (int i = 0; i < ARRAY_SIZE; i++)
+        {
+            shared_array[i] = i * 10 + (rand() % 10); // Assign different values
+            printf("Writer: Wrote %d at index %d\n", shared_array[i], i);
+            usleep(50000);
+        }
+        printf("Writer Thread %s done!\n", name);
     }
-
-    printf("Thread %s done!\n", name);
+    else if (*name == 'Y')
+    { // Reader thread (Y)
+        printf("Thread %s started reading\n", name);
+        for (int i = 0; i < ARRAY_SIZE; i++)
+        {
+            printf("Reader: Read %d from index %d\n", shared_array[i], i);
+            usleep(70000);
+        }
+        printf("Reader Thread %s done!\n", name);
+    }
     return NULL;
 }
 
@@ -59,7 +77,8 @@ int main(void)
     pthread_cancel(th2);
     usleep(100000);
     // Print thread ID before cancelling
-    printf("====> Cancelling Thread X (ID: %lu)!\n", (unsigned long)th1);    pthread_cancel(th1);
+    printf("====> Cancelling Thread X (ID: %lu)!\n", (unsigned long)th1);
+    pthread_cancel(th1);
     printf("exiting from main program\n");
     return 0;
 }
