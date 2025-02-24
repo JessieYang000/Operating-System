@@ -34,16 +34,31 @@ void *worker(void *data)
 //     return 0;
 // }
 
-/*Before: Without pthread_join(), the program exits after 5 seconds, killing both threads (th1 and th2) prematurely.
-After: Now, even though sleep(5) executes first, pthread_join() ensures that the main thread waits for both threads to complete before exiting. */
+// /*Before: Without pthread_join(), the program exits after 5 seconds, killing both threads (th1 and th2) prematurely.
+// After: Now, even though sleep(5) executes first, pthread_join() ensures that the main thread waits for both threads to complete before exiting. */
+// int main(void)
+// {
+//     pthread_t th1, th2;
+//     pthread_create(&th1, NULL, worker, "X");
+//     pthread_create(&th2, NULL, worker, "Y");
+//     sleep(5);
+//     printf("exiting from main program\n");
+//     pthread_join(th1, NULL); // Wait for thread X to finish
+//     pthread_join(th2, NULL); // Wait for thread Y to finish
+//     return 0;
+// }
+
 int main(void)
 {
     pthread_t th1, th2;
     pthread_create(&th1, NULL, worker, "X");
     pthread_create(&th2, NULL, worker, "Y");
-    sleep(5);
+    sleep(1);
+    printf("====> Cancelling Thread Y!!\n");
+    pthread_cancel(th2);
+    usleep(100000);
+    printf("====> Cancelling Thread X!\n");
+    pthread_cancel(th1);
     printf("exiting from main program\n");
-    pthread_join(th1, NULL); // Wait for thread X to finish
-    pthread_join(th2, NULL); // Wait for thread Y to finish
     return 0;
 }
