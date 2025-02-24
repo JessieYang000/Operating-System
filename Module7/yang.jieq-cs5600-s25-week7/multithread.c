@@ -54,11 +54,12 @@ int main(void)
     pthread_create(&th1, NULL, worker, "X");
     pthread_create(&th2, NULL, worker, "Y");
     sleep(1);
-    printf("====> Cancelling Thread Y!!\n");
+    // Print thread ID before cancelling
+    printf("====> Cancelling Thread Y (ID: %lu)!!\n", (unsigned long)th2);
     pthread_cancel(th2);
     usleep(100000);
-    printf("====> Cancelling Thread X!\n");
-    pthread_cancel(th1);
+    // Print thread ID before cancelling
+    printf("====> Cancelling Thread X (ID: %lu)!\n", (unsigned long)th1);    pthread_cancel(th1);
     printf("exiting from main program\n");
     return 0;
 }
