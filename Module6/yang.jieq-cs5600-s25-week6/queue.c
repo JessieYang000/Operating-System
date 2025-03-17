@@ -116,7 +116,7 @@ int save_in_queue(char *filename, queue_t *queue, int length)
 
     printf("Saving strings from file %s into queue\n", filename);
 
-    while (fgets(buffer, length + 2, file)) // FIX: Use correct buffer size
+    while (fgets(buffer, length + 2, file)) 
     {
         // Remove trailing newline character
         size_t len = strlen(buffer);
