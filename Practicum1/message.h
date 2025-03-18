@@ -18,7 +18,7 @@ typedef struct {
 } Message;
 
 //Hashmap for simulated disk storage
-extern Message* disk_storage;
+extern Message* disk_store;
 
 
 // Creates a new message and initializes its fields
@@ -30,7 +30,10 @@ int store_msg(const Message* msg);
 //Retrieves a message from disk based on its unique identifier
 Message* retrieve_msg(int id);
 
-//Frees the memory allocated for a Message struct
-void free_msg(Message* msg); 
+//Delete a message by ID
+void delete_msg(int id);
+
+//Free memory allocations for all messages
+void free_all_messages();
 
 #endif
