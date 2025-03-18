@@ -5,6 +5,8 @@
 #include <time.h>
 
 
+Message* disk_storage = NULL; // Hashmap storage initialized as empty
+
 // Create a message
 Message *create_msg(int id, const char *sender, const char *receiver, const char *content)
 {
@@ -35,4 +37,25 @@ Message *create_msg(int id, const char *sender, const char *receiver, const char
 }
 
 
-// Store a message in a file
+// Store a message in a the simulated disk(hashmap)
+int store_msg(const Message* msg) {
+    Message* stored_msg;
+
+    HASH_FIND_INT(disk_storage, &msg->id, stored_msg);
+    if (stored_msg) {
+        printf("Message ID %d already exists in storage.\n", msg->id);
+        return -1;
+    }
+
+    Message* new_msg = (Message*)malloc(sizeof(Message));
+    if (!new_msg) {
+        printf("Error: Memory allocation failed.\n");
+        return -1;
+    }
+
+    *new_msg = *msg;  // Copy the message
+    HASH_ADD_INT(disk_storage, id, new_msg);  // Add to hashmap
+
+    printf("Message ID %d stored in simulated disk.\n", msg->id);
+    return 0;
+}
