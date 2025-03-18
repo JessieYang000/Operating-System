@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 
+
 // Create a message
 Message *create_msg(int id, const char *sender, const char *receiver, const char *content)
 {

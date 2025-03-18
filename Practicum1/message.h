@@ -1,3 +1,5 @@
+#include "uthash.h" // Include uthash for hash map functionality
+
 // Define struct and functions
 #ifndef MESSAGE_H
 #define MESSAGE_H
