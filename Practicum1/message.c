@@ -59,3 +59,22 @@ int store_msg(const Message* msg) {
     printf("Message ID %d stored in simulated disk.\n", msg->id);
     return 0;
 }
+
+// Retrieves a message by ID
+Message* retrieve_msg(int id) {
+    Message* msg;
+    HASH_FIND_INT(message_store, &id, msg);
+    if (!msg) {
+        printf("Message ID %d not found.\n", id);
+        return NULL;
+    }
+
+    // Return a copy to prevent external modification
+    Message* result = (Message*)malloc(sizeof(Message));
+    if (!result) {
+        printf("Error: Memory allocation failed.\n");
+        return NULL;
+    }
+    *result = *msg;
+    return result;
+}
