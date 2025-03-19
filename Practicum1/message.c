@@ -38,9 +38,12 @@ Message* cache_lookup(int id) {
 
 //Insert a message into the cache
 void cache_insert(Message* msg) {
+    printf("Inserting a message into a cache...\n");
     // Check if message is already in cache
-    if (cache_lookup(msg->id)) return;
-
+    if (cache_lookup(msg->id)) {
+        printf("Message with ID %d has already existed.\n", msg->id);
+        return;
+    }
     // If cache is full, evict LRU message
     if (cache_count >= CACHE_SIZE) {
         cache_remove(tail->id);
@@ -58,6 +61,7 @@ void cache_insert(Message* msg) {
     head = new_msg;
     if (!tail) tail = new_msg; // If cache was empty, set tail
     cache_count++;
+    printf("Message with ID %d was inserted successfully in cache.\n", msg->id);
 }
 
 // Remove the least visited message from the cache
@@ -76,6 +80,7 @@ void cache_remove(int id) {
     HASH_DEL(cache, msg);
     free(msg);
     cache_count--;
+    printf("Message ID %d successfully removed from cache.\n", id);
 }
 
 // Remove all message from the cache(both from the LRU linked list and the hashmap) and free allocated memory
@@ -170,6 +175,8 @@ Message *retrieve_msg(int id)
     if (msg) {
         printf("Cache hit: Message ID %d found in cache.\n", id);
         return msg;
+    } else {
+        printf("Cache Miss: Message ID %d not found in cache. Searching from disk...\n", id);
     }
 
     // If not found in cache, search from the disk
@@ -190,6 +197,7 @@ Message *retrieve_msg(int id)
     // Read the entire message struct from the file
     fread(msg, sizeof(Message), 1, file);
     fclose(file);
+    printf("Found message with ID %d on disk.\n", id);
 
     //Insert into cache
     cache_insert(msg);
@@ -206,7 +214,7 @@ void delete_msg(int id)
     // Remove the file
     if (remove(filename) == 0)
     {
-        printf("Message ID %d deleted.\n", id);
+        printf("Message ID %d deleted on disk.\n", id);
     }
     else
     {
