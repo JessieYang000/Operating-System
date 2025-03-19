@@ -1,10 +1,8 @@
-#include "uthash.h" // Include uthash for hash map functionality
-
 // Define struct and functions
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#define CACHE_SIZE = 10;
+#define MESSAGE_DIR "messages/" // Directory to store message files
 
 // Define the Message struct
 typedef struct {
@@ -14,12 +12,7 @@ typedef struct {
     char receiver[50];     // Receiver's name
     char content[256];     // Message content
     int delivered;         // Delivery status (0 = Not delivered, 1 = Delivered)
-    UT_hash_handle hh;     // Hash handle for uthash
 } Message;
-
-//Hashmap for simulated disk storage
-extern Message* disk_store;
-
 
 // Creates a new message and initializes its fields
 Message* create_msg(int id, const char* sender, const char* receiver, const char* content);
@@ -32,8 +25,5 @@ Message* retrieve_msg(int id);
 
 //Delete a message by ID
 void delete_msg(int id);
-
-//Free memory allocations for all messages
-void free_all_messages();
-
+void free_msg(Message* msg);
 #endif

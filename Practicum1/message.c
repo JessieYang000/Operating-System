@@ -4,8 +4,11 @@
 #include <string.h>
 #include <time.h>
 
-
-Message* disk_store = NULL; // Hashmap storage initialized as empty
+// Helper function to generate the filename for a message
+void get_message_filename(int id, char *filename, size_t size)
+{
+    snprintf(filename, size, "%smessage_%d.dat", MESSAGE_DIR, id);
+}
 
 // Create a message
 Message *create_msg(int id, const char *sender, const char *receiver, const char *content)
@@ -19,11 +22,11 @@ Message *create_msg(int id, const char *sender, const char *receiver, const char
     }
 
     msg->id = id;
-    msg->timestamp = time(NULL); //Set the current time as the sending time
+    msg->timestamp = time(NULL); // Set the current time as the sending time
 
-    //Ensure safe copying by limiting the number of characters copied
+    // Ensure safe copying by limiting the number of characters copied
     strncpy(msg->sender, sender, sizeof(msg->sender) - 1);
-    msg->sender[sizeof(msg->sender) - 1] = '\0'; //Ensure null terminator
+    msg->sender[sizeof(msg->sender) - 1] = '\0'; // Ensure null terminator
 
     strncpy(msg->receiver, receiver, sizeof(msg->receiver) - 1);
     msg->receiver[sizeof(msg->receiver) - 1] = '\0';
@@ -36,67 +39,83 @@ Message *create_msg(int id, const char *sender, const char *receiver, const char
     return msg;
 }
 
+// Store a message in a file-per-message disk
+int store_msg(const Message *msg)
+{
+    // Ensure the messages directory exists
+    struct stat st = {0};
+    if (stat(MESSAGE_DIR, &st) == -1)
+    {
+        mkdir(MESSAGE_DIR, 0700);
+    }
 
-// Store a message in a the simulated disk(hashmap)
-int store_msg(const Message* msg) {
-    Message* stored_msg;
+    // Generate the filename
+    char filename[100];
+    get_message_filename(msg->id, filename, sizeof(filename));
 
-    HASH_FIND_INT(disk_store, &msg->id, stored_msg);
-    if (stored_msg) {
-        printf("Message ID %d already exists in storage.\n", msg->id);
+    // Open file for writing
+    FILE *file = fopen(filename, "wb"); // Write only(binary, overwrites existing file)
+    if (!file)
+    {
+        printf("Error: Could not open file %s for writing.\n", filename);
         return -1;
     }
 
-    Message* new_msg = (Message*)malloc(sizeof(Message));
-    if (!new_msg) {
-        printf("Error: Memory allocation failed.\n");
-        return -1;
-    }
+    // Write the entire message struct to the file
+    fwrite(msg, sizeof(Message), 1, file);
+    fclose(file);
 
-    *new_msg = *msg;  // Copy the message
-    HASH_ADD_INT(disk_store, id, new_msg);  // Add to hashmap
-
-    printf("Message ID %d stored in simulated disk.\n", msg->id);
+    printf("Message ID %d stored in file %s.\n", msg->id, filename);
     return 0;
 }
 
 // Retrieves a message by ID
-Message* retrieve_msg(int id) {
-    Message* msg;
-    HASH_FIND_INT(disk_store, &id, msg);
-    if (!msg) {
-        printf("Message ID %d not found.\n", id);
+Message *retrieve_msg(int id)
+{
+    // Generate the filename
+    char filename[100];
+    get_message_filename(id, filename, sizeof(filename));
+
+    // Open file for reading
+    FILE *file = fopen(filename, "rb"); // Read only(binary)
+    if (!file)
+    {
+        printf("Message ID %d not found on disk.\n", id);
         return NULL;
     }
 
-    // Return a copy to prevent external modification
-    Message* result = (Message*)malloc(sizeof(Message));
-    if (!result) {
+    // Allocate memory for the message
+    Message *msg = (Message *)malloc(sizeof(Message));
+    if (!msg)
+    {
         printf("Error: Memory allocation failed.\n");
+        fclose(file);
         return NULL;
     }
-    *result = *msg;
-    return result;
+
+    // Read the message from the file
+    fread(msg, sizeof(Message), 1, file);
+    fclose(file);
+
+    return msg;
 }
 
 // Deletes a message from hashmap
-void delete_msg(int id) {
-    Message* msg;
-    HASH_FIND_INT(disk_store, &id, msg);
-    if (msg) {
-        HASH_DEL(disk_store, msg);
-        free(msg);
-        printf("Message ID %d deleted.\n", id);
-    } else {
-        printf("Message ID %d not found for deletion.\n", id);
-    }
-}
+void delete_msg(int id)
+{
+    // Generate the filename
+    char filename[100];
+    get_message_filename(id, filename, sizeof(filename));
 
-// Frees all stored messages
-void free_all_messages() {
-    Message* current_msg, *tmp;
-    HASH_ITER(hh, disk_store, current_msg, tmp) {
-        HASH_DEL(disk_store, current_msg);
-        free(current_msg);
+    // Remove the file
+    if (remove(filename) == 0)
+    {
+        printf("Message ID %d deleted.\n", id);
+        return 0;
+    }
+    else
+    {
+        printf("Error: Message ID %d not found for deletion.\n", id);
+        return -1;
     }
 }
