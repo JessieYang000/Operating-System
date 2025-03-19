@@ -43,7 +43,6 @@ void free_msg(Message* msg);
  * Function declarations related to cache operations
  */
 
-void init_cache();
 Message* cache_lookup(int id);
 void cache_insert(Message* msg);
 void cache_remove(int id);
