@@ -9,7 +9,7 @@
 #include "uthash.h"
 
 // Define the Message struct
-typedef struct {
+typedef struct Message {
     int id;                // Unique identifier
     long timestamp;        // Time when the message was created
     char sender[50];       // Sender's name

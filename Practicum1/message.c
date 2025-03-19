@@ -167,15 +167,6 @@ Message *retrieve_msg(int id)
         return NULL;
     }
 
-    // Allocate memory for the message
-    Message *msg = (Message *)malloc(sizeof(Message));
-    if (!msg)
-    {
-        printf("Error: Memory allocation failed.\n");
-        fclose(file);
-        return NULL;
-    }
-
     // Allocate memory
     msg = (Message*)malloc(sizeof(Message));
 
