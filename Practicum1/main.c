@@ -1,5 +1,6 @@
 #include "message.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int main() {
     // Create and store messages
@@ -9,7 +10,7 @@ int main() {
     Message* msg2 = create_msg(2, "Charlie", "David", "How are you?");
     store_msg(msg2);
 
-    // Retrieve messages
+    // Retrieve a message
     Message* retrieved = retrieve_msg(1);
     if (retrieved) {
         printf("Retrieved Message ID %d: %s -> %s, Content: %s\n",
@@ -29,7 +30,6 @@ int main() {
     // Clean up dynamically allocated messages
     free(msg1);
     free(msg2);
-    free_all_messages();
 
     return 0;
 }

@@ -25,5 +25,4 @@ Message* retrieve_msg(int id);
 
 //Delete a message by ID
 void delete_msg(int id);
-void free_msg(Message* msg);
 #endif

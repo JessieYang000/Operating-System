@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h> // Check if a directory exists or create a directory
 
-// Helper function to generate the filename for a message
+// Helper function to generate the filename for a message, the last parameter prevents buffer overflows
 void get_message_filename(int id, char *filename, size_t size)
-{
+{   
+    // .dat files store binary representations of Message structs for faster write and read
     snprintf(filename, size, "%smessage_%d.dat", MESSAGE_DIR, id);
 }
 
@@ -42,11 +44,11 @@ Message *create_msg(int id, const char *sender, const char *receiver, const char
 // Store a message in a file-per-message disk
 int store_msg(const Message *msg)
 {
-    // Ensure the messages directory exists
-    struct stat st = {0};
-    if (stat(MESSAGE_DIR, &st) == -1)
+    struct stat st = {0}; // Declare a struct to hold file status
+    if (stat(MESSAGE_DIR, &st) == -1) // Check if directory exists
     {
-        mkdir(MESSAGE_DIR, 0700);
+        // Create directory with permissions 0755 (allow to read and execute)
+        mkdir(MESSAGE_DIR, 0755); 
     }
 
     // Generate the filename
@@ -61,7 +63,7 @@ int store_msg(const Message *msg)
         return -1;
     }
 
-    // Write the entire message struct to the file
+    // Write the entire message struct to the file in binary format which is faster than fprintf()
     fwrite(msg, sizeof(Message), 1, file);
     fclose(file);
 
@@ -76,8 +78,8 @@ Message *retrieve_msg(int id)
     char filename[100];
     get_message_filename(id, filename, sizeof(filename));
 
-    // Open file for reading
-    FILE *file = fopen(filename, "rb"); // Read only(binary)
+    // Open file for reading(binary mode)
+    FILE *file = fopen(filename, "rb");
     if (!file)
     {
         printf("Message ID %d not found on disk.\n", id);
@@ -93,7 +95,7 @@ Message *retrieve_msg(int id)
         return NULL;
     }
 
-    // Read the message from the file
+    // Read the entire message struct from the file
     fread(msg, sizeof(Message), 1, file);
     fclose(file);
 
@@ -111,11 +113,9 @@ void delete_msg(int id)
     if (remove(filename) == 0)
     {
         printf("Message ID %d deleted.\n", id);
-        return 0;
     }
     else
     {
         printf("Error: Message ID %d not found for deletion.\n", id);
-        return -1;
     }
 }
