@@ -78,6 +78,23 @@ void cache_remove(int id) {
     cache_count--;
 }
 
+// Remove all message from the cache(both from the LRU linked list and the hashmap) and free allocated memory
+void cache_free() {
+    Message* current_msg, *tmp;
+
+    HASH_ITER(hh, cache, current_msg, tmp) {
+        HASH_DEL(cache, current_msg);  // Remove from hash table
+        free(current_msg);  // Free memory
+    }
+
+    // Reset cache state
+    cache = NULL;
+    head = NULL;
+    tail = NULL;
+    cache_count = 0;
+    
+    printf("Cache cleared.\n");
+}
 
 // Helper function to generate the filename for a message, the last parameter prevents buffer overflows
 void get_message_filename(int id, char *filename, size_t size)
@@ -194,5 +211,12 @@ void delete_msg(int id)
     else
     {
         printf("Error: Message ID %d not found for deletion.\n", id);
+    }
+}
+
+// Free dynamically allocated messages
+void free_msg(Message* msg) {
+    if (msg) {
+        free(msg);
     }
 }
