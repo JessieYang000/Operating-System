@@ -45,8 +45,29 @@ void cache_insert(Message* msg) {
         return;
     }
     // If cache is full, evict LRU message
+    // if (cache_count >= CACHE_SIZE) {
+    //  printf("**Cache is full, evicting...**\n");
+    //     cache_remove(tail->id);
+    // }
+
+    // Randomly evict a message from the cache
     if (cache_count >= CACHE_SIZE) {
-        cache_remove(tail->id);
+        printf("**Cache is full, evicting...**\n");
+        int random_index = rand() % CACHE_SIZE;
+
+        Message *e, *tmp;
+        int i = 0;
+
+        // iterate over hashmap entries until the randomly chosen one
+        HASH_ITER(hh, cache, e, tmp) {
+            if (i == random_index) {
+                int remove_id = e->id;
+                cache_remove(remove_id);
+                printf("**Successfully evicted message with ID: %d **\n", remove_id);
+                return;
+            }
+            i++;
+        }
     }
 
     // Insert message into hashmap
