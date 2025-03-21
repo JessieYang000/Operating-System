@@ -52,6 +52,7 @@ void cache_insert(Message* msg) {
     // Insert message into hashmap
     Message* new_msg = (Message*)malloc(sizeof(Message));
     *new_msg = *msg;
+    new_msg->delivered = 1;
     HASH_ADD_INT(cache, id, new_msg);
 
     // Insert message at the front of LRU list
@@ -138,7 +139,7 @@ Message *create_msg(int id, const char *sender, const char *receiver, const char
 }
 
 // Store a message in a file-per-message disk
-int store_msg(const Message *msg)
+int store_msg(Message *msg)
 {
     struct stat st = {0}; // Declare a struct to hold file status
     if (stat(MESSAGE_DIR, &st) == -1) // Check if directory exists
@@ -158,6 +159,8 @@ int store_msg(const Message *msg)
         printf("Error: Could not open file %s for writing.\n", filename);
         return -1;
     }
+
+    msg->delivered = 1;
 
     // Write the entire message struct to the file in binary format which is faster than fprintf()
     fwrite(msg, sizeof(Message), 1, file);

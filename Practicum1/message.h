@@ -28,7 +28,7 @@ typedef struct Message {
 Message* create_msg(int id, const char* sender, const char* receiver, const char* content);
 
 //Stores a message persistently in disk
-int store_msg(const Message* msg);
+int store_msg(Message* msg);
 
 //Retrieves a message from disk based on its unique identifier
 Message* retrieve_msg(int id);
