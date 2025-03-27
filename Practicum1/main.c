@@ -58,19 +58,19 @@ int main() {
         free(old_msg);
     printf("\n----------------------------------------\n");
 
-    // printf("\n--- TEST 4: Deleting Messages ---\n");
-    // Message* msg = create_msg(100, "Charlie", "David", "How are you?");
-    // store_msg(msg);         
-    // cache_insert(msg);      
+    printf("\n--- TEST 4: Deleting Messages ---\n");
+    Message* msg = create_msg(100, "Charlie", "David", "How are you?");
+    store_msg(msg);         
+    cache_insert(msg, isLRU);      
 
-    // //Remove from cache
-    // printf("Cache count before deletion: %d\n", get_cache_count());
-    // cache_remove(100);
-    // printf("Cache count after deletion: %d\n", get_cache_count()); // Should decrement by 1
+    //Remove from cache
+    printf("Cache count before deletion: %d\n", get_cache_count());
+    cache_remove(100);
+    printf("Cache count after deletion: %d\n", get_cache_count()); // Should decrement by 1
 
-    // Message* retrieved_after_deletion = retrieve_msg(100); 
-    // print_msg(retrieved_after_deletion); // Should be a cache miss but found in disk
-    // printf("\n----------------------------------------\n");
+    Message* retrieved_after_deletion = retrieve_msg(100, isLRU); 
+    print_msg(retrieved_after_deletion); // Should be a cache miss but found in disk
+    printf("\n----------------------------------------\n");
 
     // printf("\n--- TEST 5: Flushing the Cache ---\n");
     // cache_free();
