@@ -1,5 +1,7 @@
 #include "message.h"
 #include <stdio.h>
+#include <time.h>
+
 
 void print_msg(Message* msg) {
     if (!msg) {
@@ -11,6 +13,8 @@ void print_msg(Message* msg) {
 }
 
 int main() {
+    srand(time(NULL)); // For randomly generating 1000 message access
+
     printf("\n--- TEST 1: Store and Retrieve Messages (Disk + Cache) ---\n");
     Message* msg1 = create_msg(1, "Alice", "Bob", "Hello, Bob!");
     Message* msg2 = create_msg(2, "Charlie", "David", "How are you?");
@@ -81,13 +85,7 @@ int main() {
     free_msg(msg1);
     free_msg(msg2);
     free_msg(msg3);
-
-    free_msg(retrieved_msg1);
-    free_msg(retrieved_msg2);
-    free_msg(retrieved_msg3);
     free_msg(retrieved_msg4);
-    free_msg(old_msg);
-    free_msg(retrieved_after_deletion);
 
     printf("\n--- TEST 6: Cache Eviction by Random Replacement ---\n");
     isLRU = 0;
@@ -98,7 +96,30 @@ int main() {
         free_msg(new_msg);  
     }
 
+    printf("\n--- TEST 7: Cache Hit and Cache Miss ---\n");
+    for (int i = 1; i <= 200; i++) {
+        Message* new_msg = create_msg(i, "Sender", "Receiver", "This is a test message.");
+        cache_insert(new_msg, isLRU);
+        free_msg(new_msg);  
+    }
 
+    int hitCount = 0;
+    int missCount = 0;
+
+    for (int i = 0; i < 1000; i++) {
+        int rand_id = (rand() % 200) + 1;
+        Message* msg = cache_lookup(rand_id);  // Only tests hit/miss
+        if(msg) {
+            hitCount++;
+        } else {
+            missCount++;
+        }
+    }
+    printf("Number of hits: %d\n", hitCount); 
+    printf("Number of miss: %d\n", missCount); 
+    printf("Hit Ratio: %.2f%%\n", (hitCount / 1000.0) * 100);
+
+    cache_free();
     printf("\n--- All Tests Completed Successfully ---\n");
     return 0;
 }
