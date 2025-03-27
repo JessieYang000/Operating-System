@@ -72,24 +72,23 @@ int main() {
     print_msg(retrieved_after_deletion); // Should be a cache miss but found in disk
     printf("\n----------------------------------------\n");
 
-    // printf("\n--- TEST 5: Flushing the Cache ---\n");
-    // cache_free();
-    // // Should be a cache miss (must read from disk)
-    // print_msg(retrieve_msg(20));
+    printf("\n--- TEST 5: Flushing the Cache ---\n");
+    printf("Cache count before flushing: %d\n", get_cache_count()); // Should be 16
+    cache_free();
+    printf("Cache count before flushing: %d\n", get_cache_count()); // Should be 0
 
-    // // Free all dynamically allocated messages
-    // free_msg(msg1);
-    // free_msg(msg2);
-    // free_msg(msg3);
+    // Free all dynamically allocated messages
+    free_msg(msg1);
+    free_msg(msg2);
+    free_msg(msg3);
 
-    // free_msg(retrieved_msg1);
-    // free_msg(retrieved_msg2);
-    // free_msg(retrieved_msg3);
-    // free_msg(retrieved_msg4);
-    // free_msg(old_msg);
-    // free_msg(retrieved_after_deletion);
-    // free_msg(another_retrieved_after_deletion);
+    free_msg(retrieved_msg1);
+    free_msg(retrieved_msg2);
+    free_msg(retrieved_msg3);
+    free_msg(retrieved_msg4);
+    free_msg(old_msg);
+    free_msg(retrieved_after_deletion);
 
-    // printf("\n--- All Tests Completed Successfully ---\n");
-    // return 0;
+    printf("\n--- All Tests Completed Successfully ---\n");
+    return 0;
 }
