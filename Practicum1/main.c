@@ -45,7 +45,7 @@ int main() {
     for (int i = 4; i <= 20; i++) {
         Message* new_msg = create_msg(i, "Sender", "Receiver", "This is a test message.");
         store_msg(new_msg);
-        cache_insert(new_msg, 1);
+        cache_insert(new_msg, isLRU);
         free_msg(new_msg);  
     }
 
@@ -88,6 +88,16 @@ int main() {
     free_msg(retrieved_msg4);
     free_msg(old_msg);
     free_msg(retrieved_after_deletion);
+
+    printf("\n--- TEST 6: Cache Eviction by Random Replacement ---\n");
+    isLRU = 0;
+    for (int i = 1; i <= 20; i++) {
+        Message* new_msg = create_msg(i, "Sender", "Receiver", "This is a test message.");
+        store_msg(new_msg);
+        cache_insert(new_msg, isLRU);
+        free_msg(new_msg);  
+    }
+
 
     printf("\n--- All Tests Completed Successfully ---\n");
     return 0;
