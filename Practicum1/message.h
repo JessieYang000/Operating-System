@@ -31,7 +31,7 @@ Message* create_msg(int id, const char* sender, const char* receiver, const char
 int store_msg(Message* msg);
 
 //Retrieves a message from disk based on its unique identifier
-Message* retrieve_msg(int id);
+Message* retrieve_msg(int id, int isLRU);
 
 //Delete a message by ID
 void delete_msg(int id);
@@ -44,7 +44,8 @@ void free_msg(Message* msg);
  */
 
 Message* cache_lookup(int id);
-void cache_insert(Message* msg);
+void cache_insert(Message* msg, int isLRU);
 void cache_remove(int id);
 void cache_free();
+int get_cache_count(void);
 #endif

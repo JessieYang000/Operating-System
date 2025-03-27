@@ -20,22 +20,23 @@ int main() {
     store_msg(msg2);
     store_msg(msg3);
 
-    cache_insert(msg1);
-    cache_insert(msg2);
+    int isLRU = 1;
+    cache_insert(msg1, isLRU);
+    cache_insert(msg2, isLRU);
 
     printf("Retrieving from cache:\n");
-    Message* retrieved_msg1 = retrieve_msg(1);
+    Message* retrieved_msg1 = retrieve_msg(1, isLRU);
     print_msg(retrieved_msg1); // Should be a cache hit
 
-    Message* retrieved_msg2 = retrieve_msg(2);
+    Message* retrieved_msg2 = retrieve_msg(2, isLRU);
     print_msg(retrieved_msg2); // Should be a cache hit
     printf("\n----------------------------------------\n");
 
     printf("\n--- TEST 2: Cache Miss and Disk Read ---\n");
-    Message* retrieved_msg3 = retrieve_msg(3);
+    Message* retrieved_msg3 = retrieve_msg(3, isLRU);
     print_msg(retrieved_msg3); // Should be a cache hit and read from disk
         
-    Message* retrieved_msg4 = retrieve_msg(4);
+    Message* retrieved_msg4 = retrieve_msg(4, isLRU);
     print_msg(retrieved_msg4); // Should be a cache miss (not in disk)
     printf("\n----------------------------------------\n");
 
@@ -44,13 +45,13 @@ int main() {
     for (int i = 4; i <= 20; i++) {
         Message* new_msg = create_msg(i, "Sender", "Receiver", "This is a test message.");
         store_msg(new_msg);
-        cache_insert(new_msg);
+        cache_insert(new_msg, 1);
         free_msg(new_msg);  
     }
 
     // Retrieving an old message should cause a cache miss
     printf("Checking eviction by accessing an old message (ID 1)...\n");
-    Message* old_msg = retrieve_msg(1); // ID 1 should have been evicted
+    Message* old_msg = retrieve_msg(1, isLRU); // ID 1 should have been evicted
     print_msg(old_msg);
 
     if(old_msg) 
@@ -58,16 +59,17 @@ int main() {
     printf("\n----------------------------------------\n");
 
     // printf("\n--- TEST 4: Deleting Messages ---\n");
-    // delete_msg(2); // Delete an previously evicted message from disk
-    // Message* retrieved_after_deletion = retrieve_msg(2);
-    // print_msg(retrieved_after_deletion); // Should print "Message not found."
+    // Message* msg = create_msg(100, "Charlie", "David", "How are you?");
+    // store_msg(msg);         
+    // cache_insert(msg);      
 
-    // // Delete from both cache and disk
-    // cache_remove(12);
-    // delete_msg(12); 
-    // Message* another_retrieved_after_deletion = retrieve_msg(12);
+    // //Remove from cache
+    // printf("Cache count before deletion: %d\n", get_cache_count());
+    // cache_remove(100);
+    // printf("Cache count after deletion: %d\n", get_cache_count()); // Should decrement by 1
 
-    // print_msg(another_retrieved_after_deletion); // Should be a cache miss and print "Message not found."
+    // Message* retrieved_after_deletion = retrieve_msg(100); 
+    // print_msg(retrieved_after_deletion); // Should be a cache miss but found in disk
     // printf("\n----------------------------------------\n");
 
     // printf("\n--- TEST 5: Flushing the Cache ---\n");

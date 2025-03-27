@@ -37,46 +37,69 @@ Message* cache_lookup(int id) {
 }
 
 //Insert a message into the cache
-void cache_insert(Message* msg) {
+void cache_insert(Message* msg, int isLRU) {
     printf("Inserting a message into a cache...\n");
     // Check if message is already in cache
     if (cache_lookup(msg->id)) {
         printf("Message with ID %d has already existed.\n", msg->id);
         return;
     }
-    // If cache is full, evict LRU message
-    // if (cache_count >= CACHE_SIZE) {
-    //  printf("**Cache is full, evicting...**\n");
-    //     cache_remove(tail->id);
-    // }
-
-    // Randomly evict a message from the cache
+    // If cache is full, evict a message from the cache
     if (cache_count >= CACHE_SIZE) {
         printf("**Cache is full, evicting...**\n");
-        int random_index = rand() % CACHE_SIZE;
-
-        Message *e, *tmp;
-        int i = 0;
-
-        // iterate over hashmap entries until the randomly chosen one
-        HASH_ITER(hh, cache, e, tmp) {
-            if (i == random_index) {
-                int remove_id = e->id;
+        if(isLRU) {
+            // Evict tail (least recently used)
+            if (tail) {
+                int remove_id = tail->id;
                 cache_remove(remove_id);
-                printf("**Successfully evicted message with ID: %d **\n", remove_id);
-                return;
+                printf("Evicted message with ID: %d (LRU policy)\n", remove_id);
             }
-            i++;
+        } else {
+            int random_index = rand() % CACHE_SIZE;
+
+            Message *e, *tmp;
+            int i = 0;
+
+            // iterate over hashmap entries until the randomly chosen one
+            HASH_ITER(hh, cache, e, tmp) {
+                if (i == random_index) {
+                    int remove_id = e->id;
+                    cache_remove(remove_id);
+                    printf("Evicted message with ID: %d (Random policy)\n", remove_id);
+                    return;
+                }
+                i++;
+            }
         }
     }
 
     // Insert message into hashmap
     Message* new_msg = (Message*)malloc(sizeof(Message));
-    *new_msg = *msg;
+    if (!new_msg) {
+        printf("Error: Memory allocation for new cache message failed.\n");
+        return;
+    }
+    // Deep copy all fields
+    new_msg->id = msg->id;
+    new_msg->timestamp = msg->timestamp;
+    strncpy(new_msg->sender, msg->sender, sizeof(new_msg->sender));
+    new_msg->sender[sizeof(new_msg->sender) - 1] = '\0';
+
+    strncpy(new_msg->receiver, msg->receiver, sizeof(new_msg->receiver));
+    new_msg->receiver[sizeof(new_msg->receiver) - 1] = '\0';
+
+    strncpy(new_msg->content, msg->content, sizeof(new_msg->content));
+    new_msg->content[sizeof(new_msg->content) - 1] = '\0';
+
     new_msg->delivered = 1;
+    new_msg->next = NULL;
+    new_msg->prev = NULL;
+    memset(&new_msg->hh, 0, sizeof(UT_hash_handle));  // Reset UTHash handle
+
+    // Add to cache(hashmap)
     HASH_ADD_INT(cache, id, new_msg);
 
-    // Insert message at the front of LRU list
+    // Insert message at the front of list
     new_msg->next = head;
     new_msg->prev = NULL;
     if (head) head->prev = new_msg;
@@ -103,6 +126,10 @@ void cache_remove(int id) {
     free(msg);
     cache_count--;
     printf("Message ID %d successfully removed from cache.\n", id);
+}
+
+int get_cache_count(void) {
+    return cache_count;
 }
 
 // Remove all message from the cache(both from the LRU linked list and the hashmap) and free allocated memory
@@ -192,7 +219,7 @@ int store_msg(Message *msg)
 }
 
 // Retrieves a message by ID
-Message *retrieve_msg(int id)
+Message *retrieve_msg(int id, int isLRU)
 {
     // Check cache first
     Message* msg = cache_lookup(id);
@@ -224,27 +251,10 @@ Message *retrieve_msg(int id)
     printf("Found message with ID %d on disk.\n", id);
 
     //Insert into cache
-    cache_insert(msg);
+    cache_insert(msg, isLRU);
     return msg;
 }
 
-// Deletes a message from hashmap
-void delete_msg(int id)
-{
-    // Generate the filename
-    char filename[100];
-    get_message_filename(id, filename, sizeof(filename));
-
-    // Remove the file
-    if (remove(filename) == 0)
-    {
-        printf("Message ID %d deleted on disk.\n", id);
-    }
-    else
-    {
-        printf("Error: Message ID %d not found for deletion.\n", id);
-    }
-}
 
 // Free dynamically allocated messages
 void free_msg(Message* msg) {
