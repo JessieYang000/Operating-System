@@ -18,10 +18,6 @@ int main(void)
   struct sockaddr_in server_addr, client_addr;
   char server_message[8196], client_message[8196];
   
-  // Clean buffers:
-  memset(server_message, '\0', sizeof(server_message));
-  memset(client_message, '\0', sizeof(client_message));
-  
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
   
@@ -65,29 +61,35 @@ int main(void)
          inet_ntoa(client_addr.sin_addr), 
          ntohs(client_addr.sin_port));
   
-  // Receive client's message:
-  if (recv(client_sock, client_message, 
-           sizeof(client_message), 0) < 0){
-    printf("Couldn't receive\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
+  // Loop to handle multiple messages from the same client
+  while (1) {
+    memset(client_message, '\0', sizeof(client_message));
+    memset(server_message, '\0', sizeof(server_message));
+
+    // Receive client's message:
+    if (recv(client_sock, client_message, sizeof(client_message), 0) < 0){
+      printf("Couldn't receive\n");
+      break;
+    }
+
+    printf("Msg from client: %s\n", client_message);
+
+    if (strcmp(client_message, "exit") == 0){ 
+      printf("Client requested to close the connection.\n");
+      break;
+    }
+
+    // Respond to client:
+    sprintf(server_message, "Server received: %s", client_message);  //writes the formatted string to a buffer (server_message), so it is a dynamic response
+
+    if (send(client_sock, server_message, strlen(server_message), 0) < 0){
+      printf("Can't send\n");
+      break;
+    }
   }
-  printf("Msg from client: %s\n", client_message);
-  
-  // Respond to client:
-  strcpy(server_message, "This is the server's response message.");
-  
-  if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-    printf("Can't send\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
-  }
-  
+
   // Closing the socket:
   close(client_sock);
   close(socket_desc);
-  
   return 0;
 }
