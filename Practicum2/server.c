@@ -13,22 +13,47 @@
 #include <stdlib.h>    // for exit()
 #include <sys/types.h> // for pid_t
 #include <sys/stat.h>  // for mkdir
-#include <libgen.h>    // for dirname()
 #include <errno.h>
+#include <sys/stat.h>
+#include <libgen.h>
 
 #define CHUNK_SIZE 1024        // define fixed chunk size
-#define ROOT_DIR "server_root" // all files stored under this dir
 
-void ensure_dir(const char *path)
+// Create parent directory if it doesn't exist
+void ensure_parent_dir(const char *filepath)
 {
   char path_copy[1024];
-  strcpy(path_copy, path);
+  strcpy(path_copy, filepath);
   char *dir = dirname(path_copy);
 
-  char full_path[1024];
-  snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, dir);
-  mkdir(full_path, 0777); // only creates one level
+  // Try to create the parent directory (one level deep)
+  if (mkdir(dir, 0777) == -1)
+  {
+    if (errno != EEXIST)
+    {
+      perror("mkdir failed");
+    }
+  }
 }
+
+// Read until newline or buffer full
+ssize_t recv_line(int sock, char *buf, size_t maxlen)
+{
+  size_t total = 0;
+  while (total < maxlen - 1)
+  {
+    char ch;
+    ssize_t n = recv(sock, &ch, 1, 0);
+    if (n <= 0)
+      return -1;
+    buf[total++] = ch;
+    if (ch == '\n')
+      break;
+  }
+  buf[total] = '\0';
+  return total;
+}
+
 
 int main(void)
 {
@@ -94,7 +119,7 @@ int main(void)
 
       // receive command
       memset(buffer, '\0', CHUNK_SIZE);
-      if (recv(client_sock, buffer, CHUNK_SIZE, 0) <= 0)
+      if (recv_line(client_sock, buffer, CHUNK_SIZE) <= 0)
       {
         printf("Failed to receive command.\n");
         close(client_sock);
@@ -113,8 +138,11 @@ int main(void)
 
       // prepare full path
       char full_path[1024];
-      snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // full path under server_root
-      ensure_di(remote_path); // create folder if needed
+      snprintf(full_path, sizeof(full_path), "%s", remote_path);
+      ensure_parent_dir(full_path);
+
+      // DEBUG: print resolved path
+      printf("Trying to open: %s\n", full_path);
 
       FILE *fp = fopen(full_path, "wb");
       if (!fp)

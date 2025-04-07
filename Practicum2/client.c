@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
   //send WRITE command with remote path ---
   char command_msg[CHUNK_SIZE];
-  snprintf(command_msg, sizeof(command_msg), "WRITE %s", remote_file); 
+  snprintf(command_msg, sizeof(command_msg), "WRITE %s\n", remote_file); 
   send(socket_desc, command_msg, strlen(command_msg), 0);  
 
   // send file content in chunks
