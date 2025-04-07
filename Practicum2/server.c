@@ -12,9 +12,23 @@
 #include <unistd.h>
 #include <stdlib.h>    // for exit()
 #include <sys/types.h> // for pid_t
+#include <sys/stat.h>  // for mkdir
+#include <libgen.h>    // for dirname()
+#include <errno.h>
 
-#define CHUNK_SIZE 1024               // define fixed chunk size
-#define FILE_NAME "received_file.txt" // output file name
+#define CHUNK_SIZE 1024        // define fixed chunk size
+#define ROOT_DIR "server_root" // all files stored under this dir
+
+void ensure_dir(const char *path)
+{
+  char path_copy[1024];
+  strcpy(path_copy, path);
+  char *dir = dirname(path_copy);
+
+  char full_path[1024];
+  snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, dir);
+  mkdir(full_path, 0777); // only creates one level
+}
 
 int main(void)
 {
@@ -77,40 +91,61 @@ int main(void)
     {
       // CHILD process
       close(socket_desc); // Child doesn't need the listener
-                          // Open file for writing
-      FILE *fp = fopen(FILE_NAME, "wb");
-      if (fp == NULL)
+
+      // receive command
+      memset(buffer, '\0', CHUNK_SIZE);
+      if (recv(client_sock, buffer, CHUNK_SIZE, 0) <= 0)
+      {
+        printf("Failed to receive command.\n");
+        close(client_sock);
+        exit(1);
+      }
+
+      char *cmd = strtok(buffer, " ");
+      char *remote_path = strtok(NULL, " ");
+
+      if (cmd == NULL || remote_path == NULL || strcmp(cmd, "WRITE") != 0)
+      {
+        printf("Invalid command.\n");
+        close(client_sock);
+        exit(1);
+      }
+
+      // prepare full path
+      char full_path[1024];
+      snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // full path under server_root
+      ensure_di(remote_path); // create folder if needed
+
+      FILE *fp = fopen(full_path, "wb");
+      if (!fp)
       {
         perror("File open failed");
         close(client_sock);
         exit(1);
       }
-      // Read and write in chunks
+
+      //receive and write chunks
       while (1)
       {
         memset(buffer, '\0', CHUNK_SIZE);
-        int bytes_received = recv(client_sock, buffer, CHUNK_SIZE, 0);
-
-        if (bytes_received <= 0)
+        int bytes = recv(client_sock, buffer, CHUNK_SIZE, 0);
+        if (bytes <= 0)
         {
-          printf("Connection closed or error occurred.\n");
+          printf("Client disconnected.\n");
           break;
         }
-
-        // Check for EOF marker
         if (strncmp(buffer, "EOF", 3) == 0)
         {
-          printf("Received EOF. File transfer complete.\n");
+          printf("File written to: %s\n", full_path);
           break;
         }
-
-        fwrite(buffer, 1, bytes_received, fp);
+        fwrite(buffer, 1, bytes, fp);
       }
-      fclose(fp); // NEW: close file
+
+      fclose(fp);
       close(client_sock);
       exit(0); // Exit child process
     }
-
     else if (pid > 0)
     {
       // PARENT process
@@ -122,7 +157,7 @@ int main(void)
     }
   }
 
-  // Closing the socket:
+  // Closing the socket
   close(socket_desc);
   return 0;
 }
