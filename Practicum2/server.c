@@ -13,12 +13,15 @@
 #include <stdlib.h>    // for exit()
 #include <sys/types.h> // for pid_t
 
+#define CHUNK_SIZE 1024               // define fixed chunk size
+#define FILE_NAME "received_file.txt" // output file name
+
 int main(void)
 {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
-  char server_message[8196], client_message[8196];
+  char buffer[CHUNK_SIZE]; // smaller buffer for chunks
 
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -74,40 +77,40 @@ int main(void)
     {
       // CHILD process
       close(socket_desc); // Child doesn't need the listener
-
+                          // Open file for writing
+      FILE *fp = fopen(FILE_NAME, "wb");
+      if (fp == NULL)
+      {
+        perror("File open failed");
+        close(client_sock);
+        exit(1);
+      }
+      // Read and write in chunks
       while (1)
       {
-        memset(client_message, '\0', sizeof(client_message));
-        memset(server_message, '\0', sizeof(server_message));
+        memset(buffer, '\0', CHUNK_SIZE);
+        int bytes_received = recv(client_sock, buffer, CHUNK_SIZE, 0);
 
-        // Receive client's message:
-        if (recv(client_sock, client_message, sizeof(client_message), 0) <= 0) // Connection closed by client or error occurred
-
+        if (bytes_received <= 0)
         {
-          printf("Couldn't receive\n");
+          printf("Connection closed or error occurred.\n");
           break;
         }
 
-        printf("Msg from client: %s\n", client_message);
-
-        if (strcmp(client_message, "exit") == 0)
+        // Check for EOF marker
+        if (strncmp(buffer, "EOF", 3) == 0)
         {
-          printf("Client requested to close the connection.\n");
+          printf("Received EOF. File transfer complete.\n");
           break;
         }
 
-        // Respond to client:
-        sprintf(server_message, "Server received: %s", client_message); // writes the formatted string to a buffer (server_message), so it is a dynamic response
-
-        if (send(client_sock, server_message, strlen(server_message), 0) < 0)
-        {
-          printf("Can't send\n");
-          break;
-        }
+        fwrite(buffer, 1, bytes_received, fp);
       }
+      fclose(fp); // NEW: close file
       close(client_sock);
       exit(0); // Exit child process
     }
+
     else if (pid > 0)
     {
       // PARENT process

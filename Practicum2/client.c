@@ -11,11 +11,22 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#define CHUNK_SIZE 1024
+#define FILE_TO_SEND "myfile.txt"
+
 int main(void)
 {
   int socket_desc;
   struct sockaddr_in server_addr;
-  char server_message[2000], client_message[2000];
+  char buffer[CHUNK_SIZE]; // use chunk buffer for sending file
+  FILE *fp;                // file pointer
+
+  fp = fopen(FILE_TO_SEND, "rb");
+  if (fp == NULL)
+  {
+    perror("File open failed");
+    return 1;
+  }
 
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -23,7 +34,6 @@ int main(void)
   if (socket_desc < 0)
   {
     printf("Unable to create socket\n");
-    close(socket_desc);
     return -1;
   }
 
@@ -42,41 +52,28 @@ int main(void)
     return -1;
   }
   printf("Connected with server successfully\n");
+  printf("Sending file: %s\n", FILE_TO_SEND);
 
-  // Loop to send multiple messages
-  while (1)
+  // send file content in chunks
+  size_t bytes_read;
+  while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, fp)) > 0)
   {
-    // Clean buffers in each loop iteration
-    memset(server_message, '\0', sizeof(server_message));
-    memset(client_message, '\0', sizeof(client_message));
-
-    // Get input from the user
-    printf("Enter message (type 'exit' to quit): ");
-    fgets(client_message, sizeof(client_message), stdin); 
-    client_message[strcspn(client_message, "\n")] = '\0'; // Strip newline
-
-    // Send message to the server
-    if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
+    if (send(socket_desc, buffer, bytes_read, 0) < 0)
     {
-      printf("Unable to send message\n");
-      break;
+      perror("Send failed");
+      fclose(fp);
+      close(socket_desc);
+      return 1;
     }
-
-    if (strcmp(client_message, "exit") == 0)
-    {
-      break;
-    }
-
-    // Receive responses from the server
-    if (recv(socket_desc, server_message, sizeof(server_message), 0) < 0)
-    {
-      printf("Error while receiving server's msg\n");
-      break;
-    }
-
-    printf("Server's response: %s\n", server_message);
   }
 
+  // send EOF marker to end the transfer
+  send(socket_desc, "EOF", 3, 0);
+
+  printf("File sent successfully.\n");
+
+  // cleanup
+  fclose(fp);
   close(socket_desc);
   return 0;
 }
