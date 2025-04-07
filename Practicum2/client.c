@@ -12,21 +12,29 @@
 #include <unistd.h>
 
 #define CHUNK_SIZE 1024
-#define FILE_TO_SEND "myfile.txt"
 
-int main(void)
+int main(int argc, char *argv[])
 {
-  int socket_desc;
-  struct sockaddr_in server_addr;
-  char buffer[CHUNK_SIZE]; // use chunk buffer for sending file
-  FILE *fp;                // file pointer
+  // check argument count
+  if (argc != 4 || strcmp(argv[1], "WRITE") != 0)
+  {
+    printf("Usage: %s WRITE <local-file-path> <remote-file-path>\n", argv[0]); 
+    return 1;
+  }
 
-  fp = fopen(FILE_TO_SEND, "rb");
+  const char *local_file = argv[2];  
+  const char *remote_file = argv[3]; 
+
+  FILE *fp = fopen(local_file, "rb");
   if (fp == NULL)
   {
     perror("File open failed");
     return 1;
   }
+
+  int socket_desc;
+  struct sockaddr_in server_addr;
+  char buffer[CHUNK_SIZE]; // use chunk buffer for sending file
 
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -52,7 +60,11 @@ int main(void)
     return -1;
   }
   printf("Connected with server successfully\n");
-  printf("Sending file: %s\n", FILE_TO_SEND);
+
+  //send WRITE command with remote path ---
+  char command_msg[CHUNK_SIZE];
+  snprintf(command_msg, sizeof(command_msg), "WRITE %s", remote_file); 
+  send(socket_desc, command_msg, strlen(command_msg), 0);  
 
   // send file content in chunks
   size_t bytes_read;
