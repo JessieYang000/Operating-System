@@ -5,3 +5,7 @@ server: server.c
 
 client: client.c
 	gcc client.c -o client
+# Clean up build artifacts and generated files
+clean:
+	rm -f server
+	rm -f client
