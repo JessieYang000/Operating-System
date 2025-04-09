@@ -25,15 +25,6 @@ int main(void)
   struct sockaddr_in server_addr;
   char server_message[2000], client_message[2000];
 
-  // Clean buffers:
-  memset(server_message, '\0', sizeof(server_message));
-  memset(client_message, '\0', sizeof(client_message));
-
-  // Get input from the user:
-  printf("Enter message: ");
-  fgets(client_message, sizeof(client_message), stdin);
-  client_message[strcspn(client_message, "\n")] = '\0'; // Remove newline
-
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_desc < 0)
@@ -59,64 +50,75 @@ int main(void)
 
   printf("Connected with server successfully\n");
 
-  // Parse rfs WRITE command
-  if (strncmp(client_message, "rfs WRITE ", 10) == 0)
+  while (1)
   {
-    char cmd[5], action[6], local_path[1024], remote_path[1024];
-    int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, local_path, remote_path);
+    // Clean buffers:
+    memset(server_message, '\0', sizeof(server_message));
+    memset(client_message, '\0', sizeof(client_message));
 
-    if (matched != 4)
+    // Get input from the user:
+    printf("Enter message: ");
+    fgets(client_message, sizeof(client_message), stdin);
+    client_message[strcspn(client_message, "\n")] = '\0'; // Remove newline
+
+    // Parse rfs WRITE command
+    if (strncmp(client_message, "rfs WRITE ", 10) == 0)
     {
-      printf("Invalid format. Usage: rfs WRITE <local-path> <remote-path>\n");
+      char cmd[5], action[6], local_path[1024], remote_path[1024];
+      int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, local_path, remote_path);
+
+      if (matched != 4)
+      {
+        printf("Invalid format. Usage: rfs WRITE <local-path> <remote-path>\n");
+        continue;
+      }
+
+      if (!file_exists(local_path))
+      {
+        printf("Local file '%s' does not exist.\n", local_path);
+        close(socket_desc);
+        return -1;
+      }
+
+      // Send WRITE header
+      char header[2048];
+      snprintf(header, sizeof(header), "WRITE %s\n", remote_path);
+      send(socket_desc, header, strlen(header), 0);
+
+      // Send file content
+      FILE *fp = fopen(local_path, "rb");
+      char buffer[1024];
+      size_t bytes_read;
+      while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+      {
+        send(socket_desc, buffer, bytes_read, 0);
+      }
+      fclose(fp);
+      shutdown(socket_desc, SHUT_WR); // Indicate we're done sending
+    }
+    else
+    {
+      // Send regular message
+      if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
+      {
+        printf("Unable to send message\n");
+        close(socket_desc);
+        return -1;
+      }
+    }
+
+    // Receive the server's response:
+    if (recv(socket_desc, server_message, sizeof(server_message), 0) < 0)
+    {
+      printf("Error while receiving server's msg\n");
       close(socket_desc);
       return -1;
     }
 
-    if (!file_exists(local_path))
-    {
-      printf("Local file '%s' does not exist.\n", local_path);
-      close(socket_desc);
-      return -1;
-    }
+    printf("Server's response: %s\n", server_message);
 
-    // Send WRITE header
-    char header[2048];
-    snprintf(header, sizeof(header), "WRITE %s\n", remote_path);
-    send(socket_desc, header, strlen(header), 0);
-
-    // Send file content
-    FILE *fp = fopen(local_path, "rb");
-    char buffer[1024];
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0)
-    {
-      send(socket_desc, buffer, bytes_read, 0);
-    }
-    fclose(fp);
-    shutdown(socket_desc, SHUT_WR); // Indicate we're done sending
-  }
-  else
-  {
-    // Send regular message
-    if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
-    {
-      printf("Unable to send message\n");
-      close(socket_desc);
-      return -1;
-    }
-  }
-
-  // Receive the server's response:
-  if (recv(socket_desc, server_message, sizeof(server_message), 0) < 0)
-  {
-    printf("Error while receiving server's msg\n");
+    // Close the socket and exit:
     close(socket_desc);
-    return -1;
+    return 0;
   }
-
-  printf("Server's response: %s\n", server_message);
-
-  // Close the socket and exit:
-  close(socket_desc);
-  return 0;
 }

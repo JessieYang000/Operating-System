@@ -93,33 +93,37 @@ int main(void)
            inet_ntoa(client_addr.sin_addr),
            ntohs(client_addr.sin_port));
 
-    // Receive client's message:
-    if (recv(client_sock, client_message,
-             sizeof(client_message), 0) < 0)
+    // Receive client's message (command or plain text)
+    ssize_t msg_len = recv(client_sock, client_message, sizeof(client_message), 0);
+    if (msg_len < 0)
     {
       printf("Couldn't receive\n");
       close(client_sock);
       continue;
     }
+
     // Check if it's a WRITE command
-    if (strncmp(client_message, "WRITE ", 6) == 0) // [MODIFIED]
+    if (strncmp(client_message, "WRITE ", 6) == 0)
     {
-      char *remote_path = client_message + 6;
+      char *remote_path = client_message + 6; // Skip "WRITE " prefix to extract the target remote file path
       remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
 
       char full_path[1024];
       snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
 
-      ensure_directory(full_path); // [ADDED] Make sure directories exist
+      ensure_directory(full_path); // Make sure directories exist
 
       FILE *fp = fopen(full_path, "ab"); // Append to avoid overwriting
       if (!fp)
       {
         snprintf(server_message, sizeof(server_message), "FAILED: Could not open file for writing.\n");
         send(client_sock, server_message, strlen(server_message), 0);
+        printf("Failed to open %s for writing.\n", full_path);
         close(client_sock);
         continue;
       }
+
+      printf("Receiving file content for: %s\n", full_path);
 
       // Read file content from client after header
       char buffer[1024];
@@ -130,13 +134,13 @@ int main(void)
       }
 
       fclose(fp);
-
-      snprintf(server_message, sizeof(server_message),
-               "SUCCESS: File written to %s\n", full_path);
+      snprintf(server_message, sizeof(server_message), "SUCCESS: File written to %s\n", full_path);
+      printf("File saved successfully to %s\n", full_path);
     }
     else
     {
-      // Respond to non-WRITE messages (e.g., regular chat)
+      // Respond to non-WRITE messages
+      printf("Received message: %s\n", client_message);
       strcpy(server_message, "This is the server's response message.");
     }
 
