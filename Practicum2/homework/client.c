@@ -76,8 +76,7 @@ int main(void)
       if (!file_exists(local_path))
       {
         printf("Local file '%s' does not exist.\n", local_path);
-        close(socket_desc);
-        return -1;
+        continue;
       }
 
       // Send WRITE header
