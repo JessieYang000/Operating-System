@@ -10,17 +10,34 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+
+#define BUFFER_SIZE 8196
+#define ROOT_DIR "./server_root" // Define server root for file writes
+
+// Helper: Recursively create directories in a given path
+void ensure_directory(const char *path)
+{
+  char temp[1024];
+  strcpy(temp, path);
+  for (char *p = temp + 1; *p; p++)
+  {
+    if (*p == '/')
+    {
+      *p = '\0';
+      mkdir(temp, 0755);
+      *p = '/';
+    }
+  }
+}
 
 int main(void)
 {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
-  char server_message[8196], client_message[8196];
-
-  // Clean buffers:
-  memset(server_message, '\0', sizeof(server_message));
-  memset(client_message, '\0', sizeof(client_message));
+  char server_message[BUFFER_SIZE], client_message[BUFFER_SIZE];
 
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,9 +71,15 @@ int main(void)
   }
   printf("\nListening for incoming connections.....\n");
 
-  //Loop for keeping the server running all the time
+  mkdir(ROOT_DIR, 0755); // Ensure root directory exists
+
+  // Loop for keeping the server running all the time
   while (1)
   {
+    // Clean buffers:
+    memset(client_message, '\0', sizeof(client_message));
+    memset(server_message, '\0', sizeof(server_message));
+    
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
     client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &client_size);
@@ -64,9 +87,7 @@ int main(void)
     if (client_sock < 0)
     {
       printf("Can't accept\n");
-      close(socket_desc);
-      close(client_sock);
-      return -1;
+      continue;
     }
     printf("Client connected at IP: %s and port: %i\n",
            inet_ntoa(client_addr.sin_addr),
@@ -77,26 +98,57 @@ int main(void)
              sizeof(client_message), 0) < 0)
     {
       printf("Couldn't receive\n");
-      close(socket_desc);
       close(client_sock);
-      return -1;
+      continue;
     }
-    printf("Msg from client: %s\n", client_message);
-
-    // Respond to client:
-    strcpy(server_message, "This is the server's response message.");
-
-    if (send(client_sock, server_message, strlen(server_message), 0) < 0)
+    // Check if it's a WRITE command
+    if (strncmp(client_message, "WRITE ", 6) == 0) // [MODIFIED]
     {
-      perror("Send failed");
+      char *remote_path = client_message + 6;
+      remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
+
+      char full_path[1024];
+      snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
+
+      ensure_directory(full_path); // [ADDED] Make sure directories exist
+
+      FILE *fp = fopen(full_path, "ab"); // Append to avoid overwriting
+      if (!fp)
+      {
+        snprintf(server_message, sizeof(server_message), "FAILED: Could not open file for writing.\n");
+        send(client_sock, server_message, strlen(server_message), 0);
+        close(client_sock);
+        continue;
+      }
+
+      // Read file content from client after header
+      char buffer[1024];
+      ssize_t bytes_received;
+      while ((bytes_received = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
+      {
+        fwrite(buffer, 1, bytes_received, fp);
+      }
+
+      fclose(fp);
+
+      snprintf(server_message, sizeof(server_message),
+               "SUCCESS: File written to %s\n", full_path);
     }
+    else
+    {
+      // Respond to non-WRITE messages (e.g., regular chat)
+      strcpy(server_message, "This is the server's response message.");
+    }
+
+    // Send response to client:
+    send(client_sock, server_message, strlen(server_message), 0);
 
     // Closing the socket:
     close(client_sock);
     printf("Closed connection with client.\n\n");
-
   }
-  //Close the server socket
+
+  // Close the server socket
   close(socket_desc);
   return 0;
 }
