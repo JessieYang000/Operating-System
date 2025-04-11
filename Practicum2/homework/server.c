@@ -96,17 +96,8 @@ int main(void)
       char full_path[1024];
       snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
 
-      // Extract only the directory portion for mkdir
-      char dir_path[1024];
-      strcpy(dir_path, full_path);
-      char *last_slash = strrchr(dir_path, '/');
-      if (last_slash)
-      {
-        *last_slash = '\0';           // Truncate after last '/' to isolate the directory
-        ensure_path_exists(dir_path); // Only create directory structure
-      }
+      ensure_path_exists(full_path);
 
-      
       FILE *fp = fopen(full_path, "ab"); // Append to avoid overwriting
       if (!fp)
       {
