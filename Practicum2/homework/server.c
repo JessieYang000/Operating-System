@@ -12,25 +12,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include "fs_utils.h"
 
 #define BUFFER_SIZE 8196
 #define ROOT_DIR "./server_root" // Define server root for file writes
-
-// Helper: Recursively create directories in a given path
-void ensure_directory(const char *path)
-{
-  char temp[1024];
-  strcpy(temp, path);
-  for (char *p = temp + 1; *p; p++)
-  {
-    if (*p == '/')
-    {
-      *p = '\0';
-      mkdir(temp, 0755);
-      *p = '/';
-    }
-  }
-}
 
 int main(void)
 {
@@ -79,7 +64,7 @@ int main(void)
     // Clean buffers:
     memset(client_message, '\0', sizeof(client_message));
     memset(server_message, '\0', sizeof(server_message));
-    
+
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
     client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &client_size);
@@ -105,14 +90,14 @@ int main(void)
     // Check if it's a WRITE command
     if (strncmp(client_message, "WRITE ", 6) == 0)
     {
-      char *remote_path = client_message + 6; // Skip "WRITE " prefix to extract the target remote file path
+      char *remote_path = client_message + 6;         // Skip "WRITE " prefix to extract the target remote file path
       remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
 
       char full_path[1024];
       snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
 
-      ensure_directory(full_path); // Make sure directories exist
-
+      // Ensure all parent directories in remote path exist
+      ensure_path_exists(full_path);
       FILE *fp = fopen(full_path, "ab"); // Append to avoid overwriting
       if (!fp)
       {
