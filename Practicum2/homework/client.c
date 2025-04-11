@@ -96,6 +96,49 @@ int main(void)
       fclose(fp);
       shutdown(socket_desc, SHUT_WR); // Indicate sending is done
     }
+    // Handle rfs GET command
+    else if (strncmp(client_message, "rfs GET ", 8) == 0)
+    {
+      char cmd[5], action[4], remote_path[1024], local_path[1024];
+      int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, remote_path, local_path);
+
+      if (matched != 4)
+      {
+        printf("Invalid format. Usage: rfs GET <remote-path> <local-path>\n");
+        continue;
+      }
+
+      // Send GET header
+      char header[2048];
+      snprintf(header, sizeof(header), "GET %s\n", remote_path);
+      send(socket_desc, header, strlen(header), 0);
+
+      // Ensure directories in local path exist (like mkdir -p)
+      ensure_path_exists(local_path);
+
+      // Open local file for writing
+      FILE *fp = fopen(local_path, "wb");
+      if (!fp)
+      {
+        printf("Failed to open local file '%s' for writing.\n", local_path);
+        continue;
+      }
+
+      // Receive file content
+      ssize_t bytes_received;
+      char buffer[1024];
+      while ((bytes_received = recv(socket_desc, buffer, sizeof(buffer), 0)) > 0)
+      {
+        fwrite(buffer, 1, bytes_received, fp);
+      }
+
+      fclose(fp);
+      printf("File saved to %s\n", local_path);
+
+      // Close connection and exit after GET
+      close(socket_desc);
+      return 0;
+    }
     else
     {
       // Send regular message
