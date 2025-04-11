@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "fs_utils.h"
 
 // Validate the local file path before sending the file to the server
 int file_exists(const char *path)
@@ -93,7 +94,7 @@ int main(void)
         send(socket_desc, buffer, bytes_read, 0);
       }
       fclose(fp);
-      shutdown(socket_desc, SHUT_WR); // Indicate we're done sending
+      shutdown(socket_desc, SHUT_WR); // Indicate sending is done
     }
     else
     {
