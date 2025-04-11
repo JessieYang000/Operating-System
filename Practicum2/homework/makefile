@@ -1,11 +1,20 @@
+# Compiler and flags
+CC = gcc
+CFLAGS = -Wall
+
+# Shared sources
+UTILS = fs_utils.c
+HEADERS = fs_utils.h
+
+# Targets
 all: server client
 
-server: server.c
-	gcc server.c -o server
+server: server.c $(UTILS) $(HEADERS)
+	$(CC) $(CFLAGS) server.c $(UTILS) -o server
 
-client: client.c
-	gcc client.c -o client
-# Clean up build artifacts and generated files
+client: client.c $(UTILS) $(HEADERS)
+	$(CC) $(CFLAGS) client.c $(UTILS) -o client
+
+# Clean up build artifacts
 clean:
-	rm -f server
-	rm -f client
+	rm -f server client
