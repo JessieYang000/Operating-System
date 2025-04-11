@@ -96,8 +96,17 @@ int main(void)
       char full_path[1024];
       snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
 
-      // Ensure all parent directories in remote path exist
-      ensure_path_exists(full_path);
+      // Extract only the directory portion for mkdir
+      char dir_path[1024];
+      strcpy(dir_path, full_path);
+      char *last_slash = strrchr(dir_path, '/');
+      if (last_slash)
+      {
+        *last_slash = '\0';           // Truncate after last '/' to isolate the directory
+        ensure_path_exists(dir_path); // Only create directory structure
+      }
+
+      
       FILE *fp = fopen(full_path, "ab"); // Append to avoid overwriting
       if (!fp)
       {
@@ -125,7 +134,7 @@ int main(void)
     // Handle GET command
     else if (strncmp(client_message, "GET ", 4) == 0)
     {
-      char *remote_path = client_message + 4; // Skip "GET " prefix
+      char *remote_path = client_message + 4;         // Skip "GET " prefix
       remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
 
       char full_path[1024];
