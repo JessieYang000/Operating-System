@@ -122,9 +122,39 @@ int main(void)
       snprintf(server_message, sizeof(server_message), "SUCCESS: File written to %s\n", full_path);
       printf("File saved successfully to %s\n", full_path);
     }
+    // Handle GET command
+    else if (strncmp(client_message, "GET ", 4) == 0)
+    {
+      char *remote_path = client_message + 4; // Skip "GET " prefix
+      remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
+
+      char full_path[1024];
+      snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
+
+      FILE *fp = fopen(full_path, "rb");
+      if (!fp)
+      {
+        snprintf(server_message, sizeof(server_message), "FAILED: File not found: %s\n", full_path);
+        send(client_sock, server_message, strlen(server_message), 0);
+        printf("File not found: %s\n", full_path);
+        close(client_sock);
+        continue;
+      }
+
+      printf("Sending file: %s\n", full_path);
+      char buffer[1024];
+      size_t bytes_read;
+      while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+      {
+        send(client_sock, buffer, bytes_read, 0);
+      }
+
+      fclose(fp);
+      printf("File sent successfully.\n");
+    }
     else
     {
-      // Respond to non-WRITE messages
+      // Respond to plain messages
       printf("Received message: %s\n", client_message);
       strcpy(server_message, "This is the server's response message.");
     }
