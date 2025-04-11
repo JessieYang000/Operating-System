@@ -117,7 +117,7 @@ int main(void)
       ensure_path_exists(local_path);
 
       // Open local file for writing
-      FILE *fp = fopen(local_path, "wb");
+      FILE *fp = fopen(local_path, "ab");
       if (!fp)
       {
         printf("Failed to open local file '%s' for writing.\n", local_path);
