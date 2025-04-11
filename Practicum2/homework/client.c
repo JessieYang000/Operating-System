@@ -113,6 +113,25 @@ int main(void)
       snprintf(header, sizeof(header), "GET %s\n", remote_path);
       send(socket_desc, header, strlen(header), 0);
 
+      // Read the first chunk of response
+      char buffer[1024];
+      ssize_t bytes_received = recv(socket_desc, buffer, sizeof(buffer), 0);
+      if (bytes_received <= 0)
+      {
+        printf("Error receiving response from server.\n");
+        close(socket_desc);
+        return -1;
+      }
+
+      // Check if it's an error message from server
+      if (strncmp(buffer, "FAILED:", 7) == 0)
+      {
+        buffer[bytes_received] = '\0';        // Null-terminate
+        printf("Server error: %s\n", buffer); // Display error
+        close(socket_desc);
+        continue; // Go back to prompt
+      }
+
       // Ensure directories in local path exist (like mkdir -p)
       ensure_path_exists(local_path);
 
@@ -121,12 +140,14 @@ int main(void)
       if (!fp)
       {
         printf("Failed to open local file '%s' for writing.\n", local_path);
+        close(socket_desc);
         continue;
       }
 
-      // Receive file content
-      ssize_t bytes_received;
-      char buffer[1024];
+      // Write the first chunk already received
+      fwrite(buffer, 1, bytes_received, fp);
+
+      // Continue receiving the rest of the file
       while ((bytes_received = recv(socket_desc, buffer, sizeof(buffer), 0)) > 0)
       {
         fwrite(buffer, 1, bytes_received, fp);
