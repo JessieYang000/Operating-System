@@ -164,7 +164,8 @@ int main(void)
     else if (strncmp(client_message, "rfs RM ", 7) == 0)
     {
       char cmd[5], action[4], remote_path[1024];
-      int matched = sscanf(client_message, "%s %s %1023s", cmd, action, remote_path);
+      char extra[1024]; 
+      int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, remote_path, extra);
 
       if (matched != 3)
       {

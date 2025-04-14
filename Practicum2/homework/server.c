@@ -13,9 +13,49 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "fs_utils.h"
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 8196
 #define ROOT_DIR "./server_root" // Define server root for file writes
+
+// Recursively remove a directory
+int remove_directory(const char *path)
+{
+  DIR *d = opendir(path);
+  int r = -1;
+
+  if (d)
+  {
+    struct dirent *p;
+    r = 0;
+    while (!r && (p = readdir(d)))
+    {
+      //safety check in directory traversal
+      if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+        continue;
+
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "%s/%s", path, p->d_name);
+      struct stat statbuf;
+
+      // check if the file at buf exists and is accessible.
+      if (!stat(buf, &statbuf)) 
+      {
+        if (S_ISDIR(statbuf.st_mode))
+          r = remove_directory(buf); // Recursively remove a derectory
+        else
+          r = remove(buf); // Remove a file
+      }
+    }
+    closedir(d);
+  }
+
+  if (!r) // Return true only when r == 0
+    r = rmdir(path);
+  return r;
+}
 
 int main(void)
 {
@@ -151,6 +191,48 @@ int main(void)
 
       fclose(fp);
       printf("File sent successfully.\n");
+    }
+    // Handle RM command
+    else if (strncmp(client_message, "RM ", 3) == 0)
+    {
+      char *remote_path = client_message + 3;
+      remote_path[strcspn(remote_path, "\n")] = '\0';
+
+      char full_path[1024];
+      snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
+
+      struct stat st;
+      if (stat(full_path, &st) != 0) //check the existence of the path
+      {
+        snprintf(server_message, sizeof(server_message), "FAILED: Path not found: %s\n", full_path);
+        send(client_sock, server_message, strlen(server_message), 0);
+        printf("File or directory not found: %s\n", full_path);
+        close(client_sock);
+        continue;
+      }
+
+      int result = 0;
+      if (S_ISDIR(st.st_mode))
+      {
+        result = remove_directory(full_path); // delete directory recursively
+      }
+      else
+      {
+        result = remove(full_path); // delete file
+      }
+
+      if (result == 0)
+      {
+        snprintf(server_message, sizeof(server_message), "SUCCESS: Deleted %s\n", full_path);
+        printf("Deleted: %s\n", full_path);
+      }
+      else
+      {
+        snprintf(server_message, sizeof(server_message), "FAILED: Unable to delete %s\n", full_path);
+        printf("Failed to delete: %s\n", full_path);
+      }
+
+      send(client_sock, server_message, strlen(server_message), 0);
     }
     else
     {
