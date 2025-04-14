@@ -160,6 +160,46 @@ int main(void)
       close(socket_desc);
       return 0;
     }
+    // Handle rfs RM command
+    else if (strncmp(client_message, "rfs RM ", 7) == 0)
+    {
+      char cmd[5], action[4], remote_path[1024];
+      int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, remote_path);
+
+      if (matched != 3)
+      {
+        printf("Invalid format. Usage: rfs RM <remote-path>\n");
+        continue;
+      }
+
+      // Send RM header
+      char header[2048];
+      snprintf(header, sizeof(header), "RM %s\n", remote_path);
+      send(socket_desc, header, strlen(header), 0);
+
+      // Read the first chunk of response
+      char buffer[1024];
+      ssize_t bytes_received = recv(socket_desc, buffer, sizeof(buffer), 0);
+      if (bytes_received <= 0)
+      {
+        printf("Error receiving response from server.\n");
+        close(socket_desc);
+        return -1;
+      }
+
+      // Check if it's an error message from server
+      if (strncmp(buffer, "FAILED:", 7) == 0)
+      {
+        buffer[bytes_received] = '\0';        // Null-terminate
+        printf("Server error: %s\n", buffer); // Display error
+        close(socket_desc);
+        continue; // Go back to prompt
+      }
+      printf("Successfully removed file from server.\n");
+      // Close connection and exit after GET
+      close(socket_desc);
+      return 0;
+    }
     else
     {
       // Send regular message
