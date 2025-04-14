@@ -17,4 +17,5 @@ client: client.c $(UTILS) $(HEADERS)
 
 # Clean up build artifacts
 clean:
-	rm -f server client
+	rm -f server client 
+	rm -rf data2 server_root
