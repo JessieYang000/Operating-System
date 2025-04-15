@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sys/wait.h> // for waitpid
 #include <fcntl.h>    // for file control (flock)
+#include <sys/time.h> // for gettimeofday()
 
 #define BUFFER_SIZE 8196
 #define ROOT_DIR "./server_root" // Define server root for file writes
@@ -184,6 +185,9 @@ int main(void)
         while ((bytes_received = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
         {
           fwrite(buffer, 1, bytes_received, fp);
+          fflush(fp);        // Ensure data is flushed from stdio buffer
+          fsync(fileno(fp)); // Ensure data is flushed to disk before releasing lock
+          usleep(100);       // Simulate slow disk(0.1 ms delay per chunk)
         }
 
         fclose(fp);
@@ -211,7 +215,12 @@ int main(void)
           exit(1);
         }
 
+        struct timeval t1, t2;
+        gettimeofday(&t1, NULL);
         flock(fd, LOCK_SH); // Acquire shared lock for safe reading
+        gettimeofday(&t2, NULL);
+        printf("Time waiting for shared lock: %.3f seconds\n",
+               (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0);
 
         FILE *fp = fdopen(fd, "rb"); // Wrap fd into FILE* stream
         if (!fp)
