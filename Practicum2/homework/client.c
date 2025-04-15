@@ -128,7 +128,7 @@ int main(void)
       {
         buffer[bytes_received] = '\0';        // Null-terminate
         printf("Server error: %s\n", buffer); // Display error
-        continue; // Go back to prompt
+        continue;                             // Go back to prompt
       }
 
       // Ensure directories in local path exist (like mkdir -p)
@@ -163,7 +163,7 @@ int main(void)
     else if (strncmp(client_message, "rfs RM ", 7) == 0)
     {
       char cmd[5], action[4], remote_path[1024];
-      char extra[1024]; 
+      char extra[1024];
       int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, remote_path, extra);
 
       if (matched != 3)
