@@ -128,7 +128,6 @@ int main(void)
       {
         buffer[bytes_received] = '\0';        // Null-terminate
         printf("Server error: %s\n", buffer); // Display error
-        close(socket_desc);
         continue; // Go back to prompt
       }
 
