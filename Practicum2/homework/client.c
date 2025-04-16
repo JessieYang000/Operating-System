@@ -62,15 +62,15 @@ int main(void)
     fgets(client_message, sizeof(client_message), stdin);
     client_message[strcspn(client_message, "\n")] = '\0'; // Remove newline
 
-    // Parse rfs WRITE command
+    // Parse rfs WRITE command (support optional R-ONLY)
     if (strncmp(client_message, "rfs WRITE ", 10) == 0)
     {
-      char cmd[5], action[6], local_path[1024], remote_path[1024];
-      int matched = sscanf(client_message, "%s %s %1023s %1023s", cmd, action, local_path, remote_path);
+      char cmd[5], action[6], local_path[1024], remote_path[1024], mode[16] = "";
+      int matched = sscanf(client_message, "%s %s %1023s %1023s %15s", cmd, action, local_path, remote_path, mode);
 
-      if (matched != 4)
+      if (matched < 4 || matched > 5)
       {
-        printf("Invalid format. Usage: rfs WRITE <local-path> <remote-path>\n");
+        printf("Invalid format. Usage: rfs WRITE <local-path> <remote-path> [R-ONLY]\n");
         continue;
       }
 
@@ -80,9 +80,12 @@ int main(void)
         continue;
       }
 
-      // Send WRITE header
+      // Send WRITE header, append R-ONLY if present
       char header[2048];
-      snprintf(header, sizeof(header), "WRITE %s\n", remote_path);
+      if (matched == 5 && strcmp(mode, "R-ONLY") == 0)
+        snprintf(header, sizeof(header), "WRITE %s R-ONLY\n", remote_path);
+      else
+        snprintf(header, sizeof(header), "WRITE %s\n", remote_path);
       send(socket_desc, header, strlen(header), 0);
 
       // Send file content
@@ -192,7 +195,7 @@ int main(void)
       {
         buffer[bytes_received] = '\0';        // Null-terminate
         printf("Server error: %s\n", buffer); // Display error
-        continue; // Go back to prompt
+        continue;                             // Go back to prompt
       }
       printf("Successfully removed file from server.\n");
       // Close connection and exit after GET
