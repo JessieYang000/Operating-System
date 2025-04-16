@@ -1,7 +1,7 @@
 # Remote File System (RFS)
 
 This project implements a basic **Remote File System (RFS)** using TCP sockets in C. It allows clients to perform file operations on a centralized remote server, including:
-- Writing local files to the remote server
+- Writing local files to the remote server with or without permissions
 - Fetching remote files to local directories
 - Removing files or directories on the remote server
 - Concurrent client support with file locking for consistency
@@ -14,6 +14,7 @@ Upload a file from a local path to a remote server path.
 - If the remote path doesn't exist, it will be created.
 - If the local path doesn't exist, the user will be prompted again.
 - If the command format is invalid, the user will be prompted again.
+- If a file was created as read-only, it should not be written anymore.
 
 ### 2. **GET**  
 Download a file from the remote server to a local path.
@@ -21,12 +22,16 @@ Download a file from the remote server to a local path.
 - If the local path doesn't exist, it will be created.
 - If the remote file doesn't exist, the user will be prompted again.
 - If the command format is invalid, the user will be prompted again.
+- If a file was created as read-only, it should still be read from.
+
 
 ### 3. **RM**  
 Delete a remote file or directory.
 
 - If the remote path doesn't exist, the user will be prompted again.
 - If the command format is invalid, the user will be prompted again.
+- If a file was created as read-only, it should not be deleted anymore.
+
 
 ### 4. **Multiple Clients (Concurrency)**  
 The server supports multiple clients concurrently performing read/write/delete operations. File locking (`flock`) ensures safe concurrent access.
@@ -52,5 +57,10 @@ Before testing, run `make clean && make` to compile the program. Then run `./ser
 - Multiple Clients(keep server running and no need to start the client)
     - `./concurrent_test.sh`
     This script launches two clients:
-    - The first client writes a large file to the server.
-    - The second client attempts to read the same file concurrently (and should wait if necessary due to file locks).
+        - The first client writes a large file to the server.
+        - The second client attempts to read the same file concurrently (and should wait if necessary due to file locks).
+- Permissions(a file created as read-only could not be modified, but still can be read from)
+    - valid: `rfs WRITE data/localfoo.txt permission/foo.txt R-ONLY`
+    - valid: `rfs WRITE data/localfoo.txt permission/foo.txt`
+    - valid: `rfs RM permission/foo.txt`
+    - valid: `rfs GET permission/foo.txt data/permission.txt`
