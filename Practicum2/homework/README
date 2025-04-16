@@ -19,10 +19,8 @@ Before testing, run `make clean && make` to compile the program. Then run `./ser
     - valid with a new local path: `rfs GET folder/foo.txt data3/localfoo.txt`
 - RM
     - valid: `rfs RM folder/foo.txt`
-    - valid: `rfs RM folder/`
-    - valid: `rfs RM folder`
+    - valid: `rfs RM folder/` or `rfs RM folder`
     - invalid remote path: `rfs RM test/data.txt`
-    - invalid input: `rfs RM folder test/data.txt`
     - valid: `rfs RM /`
 - Multiple Clients
     - `./concurrent_test.sh`
