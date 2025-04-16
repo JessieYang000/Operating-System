@@ -150,19 +150,35 @@ int main(void)
           break;
         }
 
-        // Handle WRITE command
+        // Handle WRITE(regular or R-ONLY) command
         if (strncmp(client_message, "WRITE ", 6) == 0)
         {
-          char *remote_path = client_message + 6;         // Skip "WRITE " prefix to extract the target remote file path
-          remote_path[strcspn(remote_path, "\n")] = '\0'; // Remove newline if present
+          // Parse optional "R-ONLY" flag
+          char remote_path[1024];
+          char mode[16] = "RW"; // default to read-write
+          sscanf(client_message + 6, "%1023s %15s", remote_path, mode);
 
+          remote_path[strcspn(remote_path, "\n")] = '\0'; // remove newline
           char full_path[1024];
-          snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path); // Prepend root directory
+          snprintf(full_path, sizeof(full_path), "%s/%s", ROOT_DIR, remote_path);
 
           ensure_path_exists(full_path);
 
+          // If the file already exists and is read-only, reject the write
+          struct stat st;
+          if (stat(full_path, &st) == 0 && (st.st_mode & S_IWUSR) == 0)
+          {
+            snprintf(server_message, sizeof(server_message), "FAILED: Cannot write to read-only file: %s\n", full_path);
+            send(client_sock, server_message, strlen(server_message), 0);
+            printf("Denied write to read-only file: %s\n", full_path);
+            break;
+          }
+
+          // Use appropriate permission for creation
+          mode_t file_mode = (strcmp(mode, "R-ONLY") == 0) ? 0444 : 0644;
+
           // Open the file at full_path for appending. If it doesn’t exist, create it with read/write permission for owner, and read-only for others.
-          int fd = open(full_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+          int fd = open(full_path, O_WRONLY | O_CREAT | O_APPEND, file_mode);
           if (fd < 0)
           {
             snprintf(server_message, sizeof(server_message), "FAILED: Could not open file for writing.\n");
@@ -273,6 +289,14 @@ int main(void)
             continue; // let client retry if path not found
           }
 
+          // Block deletion or writing if the target is a regular file and is read-only (owner lacks write permission)
+          if (!S_ISDIR(st.st_mode) && (st.st_mode & S_IWUSR) == 0)
+          {
+            snprintf(server_message, sizeof(server_message), "FAILED: Cannot delete read-only file: %s\n", full_path);
+            send(client_sock, server_message, strlen(server_message), 0);
+            printf("Denied delete on read-only file: %s\n", full_path);
+            continue;
+          }
           int result = 0;
           if (S_ISDIR(st.st_mode))
           {
