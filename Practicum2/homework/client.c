@@ -13,13 +13,6 @@
 #include <sys/stat.h>
 #include "fs_utils.h"
 
-// Validate the local file path before sending the file to the server
-int file_exists(const char *path)
-{
-  struct stat st;
-  return stat(path, &st) == 0 && S_ISREG(st.st_mode); // Check existence of the file and whether it's a regular file
-}
-
 int main(void)
 {
   int socket_desc;

@@ -23,43 +23,6 @@
 #define BUFFER_SIZE 8196
 #define ROOT_DIR "./server_root" // Define server root for file writes
 
-// Recursively remove a directory
-int remove_directory(const char *path)
-{
-  DIR *d = opendir(path);
-  int r = -1;
-
-  if (d)
-  {
-    struct dirent *p;
-    r = 0;
-    while (!r && (p = readdir(d)))
-    {
-      // safety check in directory traversal
-      if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
-        continue;
-
-      char buf[1024];
-      snprintf(buf, sizeof(buf), "%s/%s", path, p->d_name);
-      struct stat statbuf;
-
-      // check if the file at buf exists and is accessible.
-      if (!stat(buf, &statbuf))
-      {
-        if (S_ISDIR(statbuf.st_mode))
-          r = remove_directory(buf); // Recursively remove a derectory
-        else
-          r = remove(buf); // Remove a file
-      }
-    }
-    closedir(d);
-  }
-
-  if (!r) // Return true only when r == 0
-    r = rmdir(path);// rmdir() is used to delete the empty directory
-  return r;
-}
-
 int main(void)
 {
   int socket_desc, client_sock;
