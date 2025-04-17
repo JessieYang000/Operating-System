@@ -56,7 +56,7 @@ int remove_directory(const char *path)
   }
 
   if (!r) // Return true only when r == 0
-    r = rmdir(path);
+    r = rmdir(path);// rmdir() is used to delete the empty directory
   return r;
 }
 
@@ -244,7 +244,7 @@ int main(void)
           flock(fd, LOCK_SH); // Acquire shared lock for safe reading
           gettimeofday(&t2, NULL);
 
-          printf("Time waiting for shared lock: %.3f seconds\n",
+          printf("====== Time waiting for shared lock: %.3f seconds ======\n",
                  (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0);
 
           FILE *fp = fdopen(fd, "rb"); // Wrap fd into FILE* stream which allows to use fread() instead of manually managing file buffers with read()
